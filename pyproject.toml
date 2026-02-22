@@ -9,6 +9,7 @@ package-mode = false
 python = "^3.11"
 pydantic = "^2.6.0"
 aiokafka = "^0.10.0"
+pyspark = "3.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

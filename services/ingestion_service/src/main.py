@@ -2,6 +2,7 @@ import asyncio
 import logging
 import signal
 import sys
+import os
 
 from application.ingestion_app import IngestionOrchestrator
 from infrastructure.mock_provider import MockMatchProvider
@@ -17,9 +18,9 @@ logger = logging.getLogger("IngestionService")
 async def main() -> None:
     logger.info("Starting Ingestion Service...")
 
-    # Environment variables - TODO: move to config file or env vars
-    KAFKA_BROKER = "localhost:9092" # Address of Kafka cluster
-    MATCH_ID = "live_match_777" # For testing set to a fixed match ID
+    # Environment variables
+    KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
+    MATCH_ID = os.getenv("MATCH_ID", "live_match_777") # For testing set to a fixed match ID
 
     # Initialize provider and publisher (Adapters)
     provider = MockMatchProvider()

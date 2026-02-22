@@ -59,3 +59,18 @@ services:
       - POSTGRES_USER=engine_user
       - POSTGRES_PASSWORD=engine_pass
       - POSTGRES_DB=value_engine_db
+  
+  ingestion-service:
+    build:
+      # context - main folder of the project
+      context: . 
+      dockerfile: services/ingestion_service/Dockerfile
+    container_name: ingestion_service
+    networks:
+      - value_engine_net
+    environment:
+      # Kafka address for the ingestion service to connect to
+      - KAFKA_BROKER=kafka:29092
+    depends_on:
+      - kafka
+    restart: on-failure
