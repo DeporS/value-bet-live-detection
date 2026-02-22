@@ -2,6 +2,7 @@ import asyncio
 import random
 from typing import List
 from datetime import datetime, UTC
+
 from application.interfaces import MatchDataProvider
 from shared_lib.domain.events import MatchEvent, OddsEvent
 
