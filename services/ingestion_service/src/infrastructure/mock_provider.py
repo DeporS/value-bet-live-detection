@@ -17,7 +17,7 @@ class MockMatchProvider(MatchDataProvider):
         await asyncio.sleep(random.uniform(0.1, 0.5)) # asyncio.sleep to not block the event loop
 
         # Simulate that 80% of examples returns empty list (nothing happenes) to not spam kafka each second
-        if rand.random() > 0.2:
+        if random.random() > 0.2:
             return []
         
         # If something happens - select random event

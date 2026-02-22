@@ -29,8 +29,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: 'live-football-engine-cluster' 
-    volumes:
-      - kafka_data:/tmp/kafka-logs
+    # volumes:
+    #   - kafka_data:/tmp/kafka-logs
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
