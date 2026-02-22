@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
-
 class BaseEvent(BaseModel):
     """Base class for all events in the system."""
     model_config = ConfigDict(frozen=True) # Make the model immutable
