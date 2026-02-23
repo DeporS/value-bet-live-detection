@@ -45,6 +45,23 @@ services:
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
     depends_on:
       - kafka
+  
+  kafka-setup:
+    image: apache/kafka:3.7.0
+    container_name: kafka-setup
+    networks:
+      - value_engine_net
+    depends_on:
+      - kafka
+    # Script waits 5 seconds for Kafka to start, then creates the necessary topics if they don't exist
+    command: >
+      bash -c "
+        sleep 5 &&
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic raw_match_events --bootstrap-server kafka:29092 --partitions 2 --replication-factor 1 &&
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic raw_odds_events --bootstrap-server kafka:29092 --partitions 2 --replication-factor 1 &&
+        /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic model_features --bootstrap-server kafka:29092 --partitions 2 --replication-factor 1 &&
+        echo 'Initialized all Kafka topics.'
+      "
 
   postgres:
     image: postgres:16-alpine
@@ -72,5 +89,19 @@ services:
       # Kafka address for the ingestion service to connect to
       - KAFKA_BROKER=kafka:29092
     depends_on:
-      - kafka
+      kafka-setup:
+        condition: service_completed_successfully
     restart: on-failure
+  
+  streaming-processor:
+    build:
+      context: . 
+      dockerfile: services/streaming_processor/Dockerfile
+    container_name: streaming_processor
+    networks:
+      - value_engine_net
+    environment:
+      - KAFKA_BROKER=kafka:29092
+    depends_on:
+      kafka-setup:
+        condition: service_completed_successfully
