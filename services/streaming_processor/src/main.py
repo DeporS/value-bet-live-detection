@@ -75,5 +75,23 @@ def main() -> None:
 
     query.awaitTermination()
 
+    # Send the rolling xG values to another Kafka topic for further processing
+    kafka_output_df = rolling_xg_df \
+        .selectExpr(
+            "match_id as key",
+            "to_json(struct(window.start as window_start, window.end as window_end, match_id, team_id, rolling_xg)) as value"
+        )
+    
+    kafka_query = kafka_output_df.writeStream \
+        .format("kafka") \
+        .option("kafka.bootstrap.servers", kafka_broker) \
+        .option("topic", "model_features") \
+        .option("checkpointLocation", "/tmp/spark-checkpoints/rolling_xg") \
+        .outputMode("update") \
+        .start()
+
+    # Wait for both queries to finish (they won't, as they are streaming)
+    spark.streams.awaitAnyTermination()
+
 if __name__ == "__main__":
     main()

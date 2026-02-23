@@ -39,3 +39,10 @@ class OddsEvent(BaseEvent):
             "away": away_p / total_p
         }
 
+class ValueBetEvent(BaseEvent):
+    """Alert for potential value bet opportunity"""
+    team_id: str
+    model_probability: float = Field(..., ge=0.0, le=1.0)
+    implied_probability: float = Field(..., ge=0.0, le=1.0)
+    expected_value: float = Field(..., description="Expected value of the bet (model_probability - implied_probability)")
+    current_odds: float = Field(..., gt=1.0)
