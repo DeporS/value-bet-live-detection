@@ -50,6 +50,9 @@ class ValueBetEvent(BaseEvent):
 class MatchStatsSnapshot(BaseEvent):
     """Full snapshot of match statistics at a given point in time. Useful for training data and model features."""
     event_type: Literal["stats_snapshot"] = "stats_snapshot"
+
+    # --- Time ---
+    minute: int = Field(default=0, ge=0, le=150)
     
     # --- Possession & Goals ---
     home_goals: int = Field(default=0, ge=0)

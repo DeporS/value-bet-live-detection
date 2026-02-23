@@ -84,10 +84,33 @@ class FlashscoreProvider(MatchDataProvider):
         
         home_goals = 0
         away_goals = 0
+        match_minute = 0
 
         try:
             home_goals = int(core_dict.get("DE", "0"))
             away_goals = int(core_dict.get("DF", "0"))
+
+            match_status = int(core_dict.get("DA", "0"))
+            current_period_start = int(core_dict.get("DD", "0"))
+
+            current_timestamp = datetime.now(UTC).timestamp()
+
+            # Logic to determine match minute
+            if match_status in [1, 2] and current_period_start > 0:
+                elapsed_seconds = current_timestamp - current_period_start
+                
+                # If DA=1 (1st half) add 0. If DA=2 (2nd half), add 45
+                base_minutes = 0 if match_status == 1 else 45
+                
+                match_minute = base_minutes + int(elapsed_seconds / 60)
+            elif match_status == 3: # (Half-time)
+                match_minute = 45
+            elif match_status == 4: # (End of regular time)
+                match_minute = 90
+            
+            # Safety check to ensure minute is not negative
+            match_minute = max(0, match_minute)
+
         except ValueError:
             logger.warning("Could not parse goals from Core Feed.")
 
@@ -145,6 +168,9 @@ class FlashscoreProvider(MatchDataProvider):
             event_id=f"snap_{match_id}_{datetime.now().timestamp()}",
             match_id=match_id,
             timestamp=datetime.now(UTC),
+
+            # Time
+            minute=match_minute,
             
             # Possession & Goals
             home_goals=home_goals,
