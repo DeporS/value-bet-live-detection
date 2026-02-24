@@ -22,3 +22,5 @@ env/
 .mypy_cache/
 .pytest_cache/
 .hypothesis/
+
+data/training_set/*

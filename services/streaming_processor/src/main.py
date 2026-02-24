@@ -261,6 +261,7 @@ def main() -> None:
     # Using append to save only the closed windows
     parquet_query = training_df.writeStream \
         .format("parquet") \
+        .partitionBy("match_id") \
         .option("path", "/app/data/training_set") \
         .option("checkpointLocation", "/tmp/spark-checkpoints/training_parquet") \
         .outputMode("append") \
