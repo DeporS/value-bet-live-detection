@@ -53,6 +53,7 @@ class MatchStatsSnapshot(BaseEvent):
 
     # --- Time ---
     minute: int = Field(default=0, ge=0, le=150)
+    second: int = Field(default=0, ge=0, le=59)
     
     # --- Possession & Goals ---
     home_goals: int = Field(default=0, ge=0)

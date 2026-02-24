@@ -12,7 +12,7 @@ async def run_test() -> None:
     await provider.connect()
 
     # match id from flashscore
-    match_id = "UBn9TqDs" 
+    match_id = "27j2VQu9" 
     print(f"\nFetching raw stats for match ID: {match_id}...\n")
 
     iteration = 1
@@ -30,7 +30,7 @@ async def run_test() -> None:
                     # print(event.model_dump_json(indent=4))
 
                     # Print just the most important stats in a readable format
-                    print(f"Minute: {event.minute} | "
+                    print(f"{event.minute}:{event.second} | "
                           f"Goals: {event.home_goals}:{event.away_goals} | "
                           f"Possession: {event.home_possession * 100:.0f}% - {event.away_possession * 100:.0f}% | "
                           f"xG: {event.home_xg} - {event.away_xg}")

@@ -85,31 +85,66 @@ class FlashscoreProvider(MatchDataProvider):
         home_goals = 0
         away_goals = 0
         match_minute = 0
+        match_second = 0
 
         try:
             home_goals = int(core_dict.get("DE", "0"))
             away_goals = int(core_dict.get("DF", "0"))
 
             match_status = int(core_dict.get("DA", "0"))
+            granular_status = int(core_dict.get("DB", "0")) # more detailed status
             current_period_start = int(core_dict.get("DD", "0"))
 
             current_timestamp = datetime.now(UTC).timestamp()
 
             # Logic to determine match minute
-            if match_status in [1, 2] and current_period_start > 0:
+            # if match_status in [1, 2] and current_period_start > 0:
+            #     elapsed_seconds = current_timestamp - current_period_start
+                
+            #     # If DA=1 (1st half) add 0. If DA=2 (2nd half), add 45
+            #     base_minutes = 0 if match_status == 1 else 45
+                
+            #     match_minute = base_minutes + int(elapsed_seconds / 60)
+            #     match_second = int(elapsed_seconds % 60)
+
+            # elif match_status == 3: # (End of regular time)
+            #     match_minute = 90
+            #     match_second = 0
+            # elif match_status in [12, 13]: # (Half-time)
+            #     match_minute = 45
+            #     match_second = 0
+            # else:
+            #     match_minute = 0  # Pre-match or unknown status
+            if granular_status == 12 and current_period_start > 0: 
+                # First half
                 elapsed_seconds = current_timestamp - current_period_start
-                
-                # If DA=1 (1st half) add 0. If DA=2 (2nd half), add 45
-                base_minutes = 0 if match_status == 1 else 45
-                
-                match_minute = base_minutes + int(elapsed_seconds / 60)
-            elif match_status == 3: # (Half-time)
-                match_minute = 45
-            elif match_status == 4: # (End of regular time)
-                match_minute = 90
+                match_minute = int(elapsed_seconds / 60)
+                match_second = int(elapsed_seconds % 60)
             
-            # Safety check to ensure minute is not negative
+            elif granular_status == 13 and current_period_start > 0: 
+                # Second half
+                elapsed_seconds = current_timestamp - current_period_start
+                match_minute = 45 + int(elapsed_seconds / 60)
+                match_second = int(elapsed_seconds % 60)
+                
+            elif granular_status == 38: 
+                # Half-time
+                match_minute = 45
+                match_second = 0
+                
+            elif granular_status == 3: 
+                # End of regular time
+                match_minute = 90
+                match_second = 0
+                
+            else:
+                # Before match or unknown status - set to 0
+                match_minute = 0  
+                match_second = 0
+            
+            # Safety check to ensure minute and second are not negative
             match_minute = max(0, match_minute)
+            match_second = max(0, min(59, match_second))
 
         except ValueError:
             logger.warning("Could not parse goals from Core Feed.")
@@ -171,6 +206,7 @@ class FlashscoreProvider(MatchDataProvider):
 
             # Time
             minute=match_minute,
+            second=match_second,
             
             # Possession & Goals
             home_goals=home_goals,
