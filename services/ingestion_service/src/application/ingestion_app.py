@@ -19,13 +19,14 @@ class IngestionOrchestrator:
         self.match_events_topic = match_events_topic
         self.odds_topic = odds_topic
     
-    async def run_ingestion_loop(self, match_id: str, interval_seconds: int = 5) -> None:
+    async def run_ingestion_loop(self, match_id: str, interval_seconds: int = 5, stop_event: asyncio.Event = None) -> None:
         """Continuously fetch and publish match data at specified intervals."""
         
         logger.info(f"Starting ingestion loop for match_id={match_id} with interval={interval_seconds}s")
 
         try:
-            while True:
+            while not (stop_event and stop_event.is_set()):
+
                 # Parallel fetching of match events and odds
                 events_task = self.provider.fetch_latest_events(match_id)
                 odds_task = self.provider.fetch_latest_odds(match_id)
@@ -35,7 +36,9 @@ class IngestionOrchestrator:
                 # Error handling for single shot - wont break the loop
                 if isinstance(events, Exception):
                     logger.error(f"Error fetching events: {events}")
+                    
                 elif events:
+                    # Send to Kafka
                     await self.publisher.publish_match_events(self.match_events_topic, events)
                     logger.info(f"Published {len(events)} match events for match_id={match_id}")
                 
@@ -45,8 +48,15 @@ class IngestionOrchestrator:
                     await self.publisher.publish_odds_event(self.odds_topic, odds)
                     logger.info(f"Published odds event for match_id={match_id}")
                 
-                # Wait for the next interval
-                await asyncio.sleep(interval_seconds)
+                # Clever waiting mechanism that allows for graceful shutdown without blocking the event loop
+                if stop_event:
+                    try:
+                        await asyncio.wait_for(stop_event.wait(), timeout=interval_seconds)
+                    except asyncio.TimeoutError:
+                        pass
+                else:
+                    # Fallback if no stop_event provided - just sleep for the interval
+                    await asyncio.sleep(interval_seconds)
         
         except asyncio.CancelledError:
             logger.info(f"Stopped ingestion loop for match_id={match_id}.")

@@ -276,6 +276,6 @@ class FlashscoreProvider(MatchDataProvider):
 
         return [snapshot]
 
-    async def fetch_latest_odds():
+    async def fetch_latest_odds(self, match_id: str) -> None:
         # Maybe implement later
         return None

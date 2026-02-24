@@ -6,6 +6,7 @@ import os
 
 from application.ingestion_app import IngestionOrchestrator
 from infrastructure.mock_provider import MockMatchProvider
+from infrastructure.flashscore_provider import FlashscoreProvider
 from infrastructure.kafka_publisher import KafkaMessagePublisher
 
 # Logging configuration
@@ -20,10 +21,10 @@ async def main() -> None:
 
     # Environment variables
     KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
-    MATCH_ID = os.getenv("MATCH_ID", "live_match_777") # For testing set to a fixed match ID
+    MATCH_ID = os.getenv("MATCH_ID", "27j2VQu9") # For testing set to a fixed match ID
 
     # Initialize provider and publisher (Adapters)
-    provider = MockMatchProvider()
+    provider = FlashscoreProvider()
     publisher = KafkaMessagePublisher(bootstrap_servers=KAFKA_BROKER)
 
     # Composition of the application
@@ -36,6 +37,7 @@ async def main() -> None:
 
     # Launch network resources (Kafka producer)
     await publisher.start()
+    await provider.connect()
 
     # Graceful shutdown handling
     loop = asyncio.get_running_loop()
@@ -54,7 +56,7 @@ async def main() -> None:
 
     # Run the ingestion loop in the background
     ingestion_task = asyncio.create_task(
-        orchestrator.run_ingestion_loop(match_id=MATCH_ID, interval_seconds=2)
+        orchestrator.run_ingestion_loop(match_id=MATCH_ID, interval_seconds=5, stop_event=stop_event)
     )
 
     # Wait until a shutdown signal is received
