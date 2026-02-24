@@ -2,7 +2,7 @@ import os
 import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
-    from_json, col, window, sum as _sum, max as spark_max, min as spark_min, avg, struct, to_json
+    from_json, col, window, sum as _sum, max as spark_max, min as spark_min, avg, struct, to_json, expr
 )
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, DoubleType, TimestampType
@@ -37,8 +37,8 @@ def main() -> None:
         StructField("timestamp", TimestampType(), False),
         StructField("event_type", StringType(), False),
         
-        StructField("match_minute", IntegerType(), True),
-        StructField("match_second", IntegerType(), True),
+        StructField("minute", IntegerType(), True),
+        StructField("second", IntegerType(), True),
         
         StructField("home_goals", IntegerType(), True),
         StructField("away_goals", IntegerType(), True),
@@ -77,7 +77,8 @@ def main() -> None:
         ) \
         .agg(
             # Current match state
-            spark_max("match_minute").alias("current_minute"),
+            spark_max(expr("minute * 60 + second")).alias("max_total_seconds"),
+
             spark_max("home_goals").alias("home_goals"),
             spark_max("away_goals").alias("away_goals"),
             
@@ -111,7 +112,8 @@ def main() -> None:
             window.start as window_start, 
             window.end as window_end, 
             match_id, 
-            current_minute, 
+            int(max_total_seconds / 60) as current_minute, 
+            int(max_total_seconds % 60) as current_second,
             home_goals, away_goals, 
             avg_home_possession, avg_away_possession, 
             momentum_home_xg, momentum_away_xg, 
