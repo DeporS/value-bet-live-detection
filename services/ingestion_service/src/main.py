@@ -21,7 +21,7 @@ async def main() -> None:
 
     # Environment variables
     KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
-    MATCH_ID = os.getenv("MATCH_ID", "bgRWYzsg") # For testing set to a fixed match ID
+    MATCH_ID = os.getenv("MATCH_ID", "KC9vVKct") # For testing set to a fixed match ID
 
     # Initialize provider and publisher (Adapters)
     provider = FlashscoreProvider()

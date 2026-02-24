@@ -249,6 +249,23 @@ def main() -> None:
         .outputMode("update") \
         .start()
 
+    logger.info("Starting Parquet output stream for ML training data...")
+
+    training_df = momentum_df \
+        .withColumn("window_start", col("window.start")) \
+        .withColumn("window_end", col("window.end")) \
+        .withColumn("current_minute", expr("int(max_total_seconds / 60)")) \
+        .withColumn("current_second", expr("int(max_total_seconds % 60)")) \
+        .drop("window", "max_total_seconds")
+    
+    # Using append to save only the closed windows
+    parquet_query = training_df.writeStream \
+        .format("parquet") \
+        .option("path", "/app/data/training_set") \
+        .option("checkpointLocation", "/tmp/spark-checkpoints/training_parquet") \
+        .outputMode("append") \
+        .start()
+
     # Wait for both queries to finish (they won't, as they are streaming)
     spark.streams.awaitAnyTermination()
 

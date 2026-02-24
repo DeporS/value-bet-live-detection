@@ -100,6 +100,8 @@ services:
     container_name: streaming_processor
     networks:
       - value_engine_net
+    volumes:
+      - ./data:/app/data
     environment:
       - KAFKA_BROKER=kafka:29092
     depends_on:
