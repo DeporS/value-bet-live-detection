@@ -21,7 +21,7 @@ async def main() -> None:
 
     # Environment variables
     KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
-    MATCH_ID = os.getenv("MATCH_ID", "0Ohi8oDl") # For testing set to a fixed match ID
+    MATCH_ID = os.getenv("MATCH_ID", "M1zZ0lxn") # For testing set to a fixed match ID
     PROXY_URL = os.getenv("PROXY_URL") # Read proxy URL from env
 
     # Initialize provider and publisher (Adapters)
@@ -60,7 +60,7 @@ async def main() -> None:
 
     # Run the ingestion loop in the background
     ingestion_task = asyncio.create_task(
-        orchestrator.run_ingestion_loop(match_id=MATCH_ID, interval_seconds=5, stop_event=stop_event)
+        orchestrator.run_ingestion_loop(match_id=MATCH_ID, interval_seconds=10, stop_event=stop_event)
     )
 
     # Wait until a shutdown signal is received

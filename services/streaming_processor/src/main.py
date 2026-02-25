@@ -119,7 +119,7 @@ def main() -> None:
     momentum_df = stats_df \
         .withWatermark("timestamp", "2 minutes") \
         .groupBy(
-            window(col("timestamp"), "5 minutes", "5 seconds"),
+            window(col("timestamp"), "5 minutes", "10 seconds"),
             col("match_id")
         ) \
         .agg(
@@ -187,6 +187,7 @@ def main() -> None:
     # For debugging purposes
     console_query = momentum_df.select(
         "match_id",
+        "max_total_seconds",
         "home_goals",
         "away_goals",
         "momentum_home_possession",
@@ -195,7 +196,7 @@ def main() -> None:
         .outputMode("update") \
         .format("console") \
         .option("truncate", "false") \
-        .trigger(processingTime="5 seconds") \
+        .trigger(processingTime="10 seconds") \
         .start()
 
     logger.info("Starting Kafka output stream to 'model_features'...")

@@ -18,6 +18,7 @@ class FlashscoreProvider(MatchDataProvider):
         self.base_url = "https://2.flashscore.ninja/2/x/feed"
         self.session: Optional[aiohttp.ClientSession] = None
         self.proxy_url = proxy_url
+        self.current_match_status = 0
 
     async def connect(self) -> None:
         """Initialize the aiohttp session with headers rotating to mimic browser behavior."""
@@ -27,7 +28,8 @@ class FlashscoreProvider(MatchDataProvider):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
             "sec-ch-ua": '"Not:A-Brand";v="99", "Microsoft Edge";v="145", "Chromium";v="145"',
             "sec-ch-ua-mobile": "?0",
-            "x-fsign": "SW9D1eZo"  # FLASHSCORE specific header, observed in browser requests (MAY CHANGE, need to monitor)
+            "x-fsign": "SW9D1eZo",  # FLASHSCORE specific header, observed in browser requests (MAY CHANGE, need to monitor)
+            "Accept-Encoding": "gzip, deflate, br"
         }
         timeout = aiohttp.ClientTimeout(total=5.0)
         self.session = aiohttp.ClientSession(headers=headers, timeout=timeout)
@@ -106,6 +108,8 @@ class FlashscoreProvider(MatchDataProvider):
             match_status = int(core_dict.get("DA", "0"))
             granular_status = int(core_dict.get("DB", "0")) # more detailed status
             current_period_start = int(core_dict.get("DD", "0"))
+
+            self.current_match_status = granular_status
 
             current_timestamp = datetime.now(UTC).timestamp()
 
