@@ -20,6 +20,11 @@ class FlashscoreProvider(MatchDataProvider):
         self.proxy_url = proxy_url
         self.current_match_status = 0
 
+        # Error tolerance mechanism
+        self.consecutive_errors = 0
+        self.max_allowed_errors = 10
+
+
     async def connect(self) -> None:
         """Initialize the aiohttp session with headers rotating to mimic browser behavior."""
         headers = {
@@ -35,6 +40,7 @@ class FlashscoreProvider(MatchDataProvider):
         self.session = aiohttp.ClientSession(headers=headers, timeout=timeout)
         logger.info("Connected to Flashscore with custom headers.")
 
+
     async def check_current_ip(self) -> None:
         """Call external API to check current IP address (useful for debugging proxy issues)."""
         check_url = "https://api.ipify.org?format=json"
@@ -46,12 +52,14 @@ class FlashscoreProvider(MatchDataProvider):
         except Exception as e:
             logger.error(f"Error checking current IP: {e}")
 
+
     async def disconnect(self) -> None:
         """Close the aiohttp session."""
         if self.session:
             await self.session.close()
             logger.info("Disconnected from Flashscore.")
     
+
     async def _fetch_text(self, url: str) -> str:
         """Safely fetch text from a URL."""
         try:
@@ -62,6 +70,7 @@ class FlashscoreProvider(MatchDataProvider):
             logger.error(f"Error fetching {url}: {e}")
             return ""
     
+
     async def fetch_latest_events(self,match_id: str) -> List[MatchEvent]:
         if not self.session:
             raise RuntimeError("Session not initialized. Call connect() before fetching events.")
@@ -75,6 +84,8 @@ class FlashscoreProvider(MatchDataProvider):
                 self._fetch_text(url_stats),
                 self._fetch_text(url_core)
             )
+
+            self.consecutive_errors = 0 # Reset error count on successful fetch
             
             return self._parse_flashscore_format(stats_text, core_text, match_id)
 
@@ -88,7 +99,18 @@ class FlashscoreProvider(MatchDataProvider):
         except Exception as e:
             logger.error(f"Unexpected integration error: {e}")
             return []
-        
+
+
+    def _handle_error_strike(self, match_id: str, error_msg: str) -> None:
+        """Helper function to manage error strikes and implement backoff if needed."""
+        self.consecutive_errors += 1
+        logger.warning(f"Error fetching data for match_id={match_id}: {error_msg} (Strike {self.consecutive_errors}/{self.max_allowed_errors})")
+
+        if self.consecutive_errors >= self.max_allowed_errors:
+            logger.critical(f"Maximum error strikes reached for match_id={match_id}. Initiating backoff and alerting.")
+            self.current_match_status = 3 # Set status to 'finished' to trigger shutdown in ingestion loop
+
+
     def _parse_flashscore_format(self, raw_text: str, core_text: str, match_id: str) -> List[MatchEvent]:
         if not raw_text:
             return []
@@ -274,6 +296,7 @@ class FlashscoreProvider(MatchDataProvider):
         )
 
         return [snapshot]
+
 
     async def fetch_latest_odds(self, match_id: str) -> None:
         # Maybe implement later
