@@ -21,10 +21,11 @@ async def main() -> None:
 
     # Environment variables
     KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
-    MATCH_ID = os.getenv("MATCH_ID", "n7Tm6Jl5") # For testing set to a fixed match ID
+    MATCH_ID = os.getenv("MATCH_ID", "0Ohi8oDl") # For testing set to a fixed match ID
+    PROXY_URL = os.getenv("PROXY_URL") # Read proxy URL from env
 
     # Initialize provider and publisher (Adapters)
-    provider = FlashscoreProvider()
+    provider = FlashscoreProvider(proxy_url=PROXY_URL)
     publisher = KafkaMessagePublisher(bootstrap_servers=KAFKA_BROKER)
 
     # Composition of the application
@@ -38,6 +39,9 @@ async def main() -> None:
     # Launch network resources (Kafka producer)
     await publisher.start()
     await provider.connect()
+
+    # Test proxy tunnel
+    await provider.check_current_ip()
 
     # Graceful shutdown handling
     loop = asyncio.get_running_loop()

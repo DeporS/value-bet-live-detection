@@ -184,7 +184,14 @@ def main() -> None:
         )
     
     logger.info("Starting console output stream...")
-    console_query = momentum_df.writeStream \
+    # For debugging purposes
+    console_query = momentum_df.select(
+        "match_id",
+        "home_goals",
+        "away_goals",
+        "momentum_home_possession",
+        "momentum_away_possession"
+    ).writeStream \
         .outputMode("update") \
         .format("console") \
         .option("truncate", "false") \

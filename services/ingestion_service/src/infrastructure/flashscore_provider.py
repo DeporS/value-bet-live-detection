@@ -13,10 +13,11 @@ class FlashscoreProvider(MatchDataProvider):
     """
     Web Sniffing Adapter for Flashscore.com (Endpoint: df_st - Detail Feed Statistics).
     """
-    def __init__(self):
+    def __init__(self, proxy_url: Optional[str] = None):
         # Base URL from curl command observed in browser
         self.base_url = "https://2.flashscore.ninja/2/x/feed"
         self.session: Optional[aiohttp.ClientSession] = None
+        self.proxy_url = proxy_url
 
     async def connect(self) -> None:
         """Initialize the aiohttp session with headers rotating to mimic browser behavior."""
@@ -28,9 +29,20 @@ class FlashscoreProvider(MatchDataProvider):
             "sec-ch-ua-mobile": "?0",
             "x-fsign": "SW9D1eZo"  # FLASHSCORE specific header, observed in browser requests (MAY CHANGE, need to monitor)
         }
-        timeout = aiohttp.ClientTimeout(total=3.0)
+        timeout = aiohttp.ClientTimeout(total=5.0)
         self.session = aiohttp.ClientSession(headers=headers, timeout=timeout)
         logger.info("Connected to Flashscore with custom headers.")
+
+    async def check_current_ip(self) -> None:
+        """Call external API to check current IP address (useful for debugging proxy issues)."""
+        check_url = "https://api.ipify.org?format=json"
+        try:
+            async with self.session.get(check_url, proxy=self.proxy_url) as response:
+                response.raise_for_status()
+                data = await response.json()
+                logger.info(f"Current IP Address: {data.get('ip')}")
+        except Exception as e:
+            logger.error(f"Error checking current IP: {e}")
 
     async def disconnect(self) -> None:
         """Close the aiohttp session."""
@@ -41,7 +53,7 @@ class FlashscoreProvider(MatchDataProvider):
     async def _fetch_text(self, url: str) -> str:
         """Safely fetch text from a URL."""
         try:
-            async with self.session.get(url) as response:
+            async with self.session.get(url, proxy=self.proxy_url) as response:
                 response.raise_for_status()
                 return await response.text()
         except Exception as e:
@@ -98,23 +110,6 @@ class FlashscoreProvider(MatchDataProvider):
             current_timestamp = datetime.now(UTC).timestamp()
 
             # Logic to determine match minute
-            # if match_status in [1, 2] and current_period_start > 0:
-            #     elapsed_seconds = current_timestamp - current_period_start
-                
-            #     # If DA=1 (1st half) add 0. If DA=2 (2nd half), add 45
-            #     base_minutes = 0 if match_status == 1 else 45
-                
-            #     match_minute = base_minutes + int(elapsed_seconds / 60)
-            #     match_second = int(elapsed_seconds % 60)
-
-            # elif match_status == 3: # (End of regular time)
-            #     match_minute = 90
-            #     match_second = 0
-            # elif match_status in [12, 13]: # (Half-time)
-            #     match_minute = 45
-            #     match_second = 0
-            # else:
-            #     match_minute = 0  # Pre-match or unknown status
             if granular_status == 12 and current_period_start > 0: 
                 # First half
                 elapsed_seconds = current_timestamp - current_period_start

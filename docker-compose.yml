@@ -94,6 +94,8 @@ services:
       kafka-setup:
         condition: service_completed_successfully
     restart: on-failure
+    env_file:
+      - .env
   
   streaming-processor:
     build:
