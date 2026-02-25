@@ -28,7 +28,7 @@ try:
         'momentum_home_possession'
     ]
     
-    print(df[preview_cols].tail(15))
+    print(df.tail(15))
 
 except Exception as e:
     print(f"Błąd podczas wczytywania plików: {e}")
