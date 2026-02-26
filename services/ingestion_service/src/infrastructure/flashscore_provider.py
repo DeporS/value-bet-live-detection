@@ -128,7 +128,7 @@ class FlashscoreProvider(MatchDataProvider):
             away_goals = int(core_dict.get("DF", "0"))
 
             match_status = int(core_dict.get("DA", "0"))
-            granular_status = int(core_dict.get("DB", "0")) # more detailed status
+            granular_status = int(core_dict.get("DB", "0")) # more detailed status ### DB=6 SECOND HALF OF EXTRA TIME
             current_period_start = int(core_dict.get("DD", "0"))
 
             self.current_match_status = granular_status
