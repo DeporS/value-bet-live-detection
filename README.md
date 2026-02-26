@@ -11,8 +11,9 @@ Go to project folder
 ## Run main program
 PYTHONPATH=$(pwd) poetry run python services/ingestion_service/src/main.py
 
-## Run test_flashscore
-PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python test_flashscore.py
+## Run experiments
+- PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_flashscore.py
+- PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_brotli.py
 
 ## Run just the airflow containers
 docker compose up postgres-airflow airflow-webserver airflow-scheduler
