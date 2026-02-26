@@ -35,14 +35,14 @@ The system is composed of decoupled microservices communicating via a producer-c
    - The central nervous system. Receives raw parsed events on the `raw_match_events` topic.
 3. **Streaming Processor (Apache Spark / PySpark):**
    - Consumes data from Kafka using Structured Streaming.
-   - Calculates live "Momentum" metrics (differentials in possession, xG, and shots over rolling 5-minute windows).
+   - Calculates live "Momentum" metrics (e.g., differentials in possession, xG, and shots over rolling 5-minute windows).
    - Outputs processed feature sets back to Kafka (`model_features`) and archives them to Parquet files for future ML model training.
 4. **Orchestrator (Apache Airflow - Upcoming):**
    - Manages the lifecycle of the system by dynamically spinning up Ingestion Service containers based on the daily match schedule.
 
 ## Engineering Highlights & Optimizations
 
-* **Bandwidth Optimization (Brotli):** HTTP requests utilize `br` compression, reducing the payload size of text feeds by ~70%.
+* **Bandwidth Optimization (Brotli):** HTTP requests utilize `br` compression, reducing the payload size.
 * **Geographically Targeted Proxy Rotation:** Traffic is routed through a European proxy gateway. As each request receives a new IP, loop latency naturally jitters between additional **0-2 seconds**, perfectly mimicking human-like network behavior.
 
 ## Prerequisites
@@ -57,7 +57,7 @@ Create a `.env` file in the root directory and populate it using the template be
 
 ```env
 # --- Proxy Configuration ---
-PROXY_URL=http://your_login__country-pl:your_password@proxy_host:proxy_port
+PROXY_URL=http://your_login:your_password@proxy_host:proxy_port
 ```
 
 ### 2. Build and Run
