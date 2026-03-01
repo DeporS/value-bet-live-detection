@@ -153,6 +153,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=false # Turn off example DAGs to keep the UI clean
       - AIRFLOW__SCHEDULER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
+      - AIRFLOW_VAR_PROXY_URL=${PROXY_URL}
     user: "50000:${DOCKER_GID:-0}"
     volumes:
       - ./dags:/opt/airflow/dags
@@ -183,6 +184,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - AIRFLOW__SCHEDULER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
+      - AIRFLOW_VAR_PROXY_URL=${PROXY_URL}
     user: "50000:${DOCKER_GID:-0}"
     volumes:
       - ./dags:/opt/airflow/dags
