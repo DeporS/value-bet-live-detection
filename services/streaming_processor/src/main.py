@@ -139,6 +139,8 @@ def main() -> None:
             expr("max_by(away_passes_final_third_pct, timestamp) - min_by(away_passes_final_third_pct, timestamp)").alias("momentum_away_passes_final_third_pct"),
             expr("max_by(home_tackles_pct, timestamp) - min_by(home_tackles_pct, timestamp)").alias("momentum_home_tackles_pct"),
             expr("max_by(away_tackles_pct, timestamp) - min_by(away_tackles_pct, timestamp)").alias("momentum_away_tackles_pct"),
+            expr("max_by(home_crosses_pct, timestamp) - min_by(home_crosses_pct, timestamp)").alias("momentum_home_crosses_pct"),
+            expr("max_by(away_crosses_pct, timestamp) - min_by(away_crosses_pct, timestamp)").alias("momentum_away_crosses_pct"),
             
             # Goals prevented
             expr("max_by(home_goals_prevented, timestamp) - min_by(home_goals_prevented, timestamp)").alias("momentum_home_goals_prevented"),
@@ -163,8 +165,6 @@ def main() -> None:
             # Playmaking
             (spark_max("home_corner_kicks") - spark_min("home_corner_kicks")).alias("momentum_home_corners"),
             (spark_max("away_corner_kicks") - spark_min("away_corner_kicks")).alias("momentum_away_corners"),
-            (spark_max("home_crosses") - spark_min("home_crosses")).alias("momentum_home_crosses"),
-            (spark_max("away_crosses") - spark_min("away_crosses")).alias("momentum_away_crosses"),
             (spark_max("home_free_kicks") - spark_min("home_free_kicks")).alias("momentum_home_free_kicks"),
             (spark_max("away_free_kicks") - spark_min("away_free_kicks")).alias("momentum_away_free_kicks"),
             
@@ -220,6 +220,7 @@ def main() -> None:
             momentum_home_long_passes_pct, momentum_away_long_passes_pct,
             momentum_home_passes_final_third_pct, momentum_away_passes_final_third_pct,
             momentum_home_tackles_pct, momentum_away_tackles_pct,
+            momentum_home_crosses_pct, momentum_away_crosses_pct,
             
             -- Goalkeeping Momentum
             momentum_home_goals_prevented, momentum_away_goals_prevented,
@@ -236,7 +237,6 @@ def main() -> None:
             
             -- Playmaking Momentum
             momentum_home_corners, momentum_away_corners,
-            momentum_home_crosses, momentum_away_crosses,
             momentum_home_free_kicks, momentum_away_free_kicks,
             
             -- Defensive Actions Momentum

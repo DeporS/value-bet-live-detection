@@ -1,7 +1,8 @@
 from typing import List, Dict
 from datetime import datetime, timedelta
+
 from airflow import DAG
-from airflow.decorators import task
+from airflow.decorators import task, task_group
 from airflow.sensors.date_time import DateTimeSensor
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.models import Variable
@@ -57,29 +58,42 @@ with DAG(
             "KAFKA_BROKER": "kafka:9092"
         }
 
-    # Fetch the list of matches (Automatically pushed to XCom)
+    @task.sensor(poke_interval=30, mode='reschedule')
+    def wait_for_kickoff(wakeup_time_str: str) -> bool:
+        """
+        Modern TaskFlow sensor. Seamlessly handles dynamic XCom arguments.
+        Returns True when it's time to wake up, otherwise sleeps.
+        """
+        target_time = datetime.fromisoformat(wakeup_time_str)
+        return datetime.now() >= target_time
+
+    @task_group(group_id='process_live_match')
+    def process_live_match(match_data: Dict):
+        """
+        This entire group of tasks will be cloned for EACH match.
+        They run completely independently of other matches.
+        """
+        wakeup_time = calculate_wakeup_time(match_data)
+        env_payload = build_container_environment(match_data)
+
+        sensor_task = wait_for_kickoff(wakeup_time)
+
+        spawn_ingestion_container = DockerOperator(
+            task_id='run_match_ingestion',
+            image='value-bet-live-detection-ingestion-service:latest',
+            api_version='auto',
+            auto_remove='force', 
+            network_mode='value-bet-live-detection_value_engine_net',
+            docker_url='unix://var/run/docker.sock',
+            mount_tmp_dir=False,
+            environment=env_payload,
+        )
+
+        # Link tasks INSIDE the cloned group
+        sensor_task >> spawn_ingestion_container
+    
+    # Fetch the list of matches
     matches_list = discover_matches()
 
-    # Prepare mapped payloads for time and environment
-    wakeup_times = calculate_wakeup_time.expand(match_data=matches_list)
-    env_payloads = build_container_environment.expand(match_data=matches_list)
-
-    # Dynamic Task Mapping: Sensor
-    wait_for_kickoff = DateTimeSensor.partial(
-        task_id='wait_for_kickoff',
-        mode='reschedule',
-        poke_interval=30,
-    ).expand(target_time=wakeup_times)
-
-    # Dynamic Task Mapping: Docker
-    spawn_ingestion_containers = DockerOperator.partial(
-        task_id='run_match_ingestion',
-        image='value-bet-live-detection-ingestion-service:latest',
-        api_version='auto',
-        auto_remove='force', 
-        network_mode='value-bet-live-detection_value_engine_net',
-        docker_url='unix://var/run/docker.sock',
-        mount_tmp_dir=False,
-    ).expand(environment=env_payloads)
-
-    wait_for_kickoff >> spawn_ingestion_containers
+    # Expand the ENTIRE TaskGroup over the list of matches
+    process_live_match.expand(match_data=matches_list)
