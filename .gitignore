@@ -23,6 +23,7 @@ env/
 .pytest_cache/
 .hypothesis/
 
+data/checkpoints/
 data/training_set/*
 !data/training_set/.gitkeep
 logs/*

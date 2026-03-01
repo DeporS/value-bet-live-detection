@@ -183,21 +183,23 @@ def main() -> None:
             (spark_max("away_goalkeeper_saves") - spark_min("away_goalkeeper_saves")).alias("momentum_away_gk_saves")
         )
     
-    logger.info("Starting console output stream...")
     # For debugging purposes
-    console_query = momentum_df.select(
-        "match_id",
-        "max_total_seconds",
-        "home_goals",
-        "away_goals",
-        "momentum_home_possession",
-        "momentum_away_possession"
-    ).writeStream \
-        .outputMode("update") \
-        .format("console") \
-        .option("truncate", "false") \
-        .trigger(processingTime="10 seconds") \
-        .start()
+    # logger.info("Starting console output stream...")
+
+    # console_query = momentum_df.select(
+    #     "match_id",
+    #     "max_total_seconds",
+    #     "home_goals",
+    #     "away_goals",
+    #     "momentum_home_possession",
+    #     "momentum_away_possession"
+    # ).writeStream \
+    #     .outputMode("update") \
+    #     .format("console") \
+    #     .option("truncate", "false") \
+    #     .option("checkpointLocation", "/app/checkpoints/console_stream") \
+    #     .trigger(processingTime="10 seconds") \
+    #     .start()
 
     logger.info("Starting Kafka output stream to 'model_features'...")
 
@@ -253,27 +255,27 @@ def main() -> None:
         .format("kafka") \
         .option("kafka.bootstrap.servers", kafka_broker) \
         .option("topic", "model_features") \
-        .option("checkpointLocation", "/tmp/spark-checkpoints/momentum_features") \
+        .option("checkpointLocation", "/app/checkpoints/kafka_momentum_features") \
         .outputMode("update") \
         .start()
 
-    logger.info("Starting Parquet output stream for ML training data...")
+    # logger.info("Starting Parquet output stream for ML training data...")
 
-    training_df = momentum_df \
-        .withColumn("window_start", col("window.start")) \
-        .withColumn("window_end", col("window.end")) \
-        .withColumn("current_minute", expr("int(max_total_seconds / 60)")) \
-        .withColumn("current_second", expr("int(max_total_seconds % 60)")) \
-        .drop("window", "max_total_seconds")
+    # training_df = momentum_df \
+    #     .withColumn("window_start", col("window.start")) \
+    #     .withColumn("window_end", col("window.end")) \
+    #     .withColumn("current_minute", expr("int(max_total_seconds / 60)")) \
+    #     .withColumn("current_second", expr("int(max_total_seconds % 60)")) \
+    #     .drop("window", "max_total_seconds")
     
     # Using append to save only the closed windows
-    parquet_query = training_df.writeStream \
-        .format("parquet") \
-        .partitionBy("match_id") \
-        .option("path", "/app/data/training_set") \
-        .option("checkpointLocation", "/tmp/spark-checkpoints/training_parquet") \
-        .outputMode("append") \
-        .start()
+    # parquet_query = training_df.writeStream \
+    #     .format("parquet") \
+    #     .partitionBy("match_id") \
+    #     .option("path", "/app/data/training_set") \
+    #     .option("checkpointLocation", "/app/checkpoints/training_parquet") \
+    #     .outputMode("append") \
+    #     .start()
 
     # Wait for both queries to finish (they won't, as they are streaming)
     spark.streams.awaitAnyTermination()
