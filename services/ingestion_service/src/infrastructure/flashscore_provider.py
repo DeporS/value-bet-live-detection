@@ -259,8 +259,6 @@ class FlashscoreProvider(MatchDataProvider):
             away_offsides=get_number("Offsides", "away", int),
             home_free_kicks=get_number("Free kicks", "home", int),
             away_free_kicks=get_number("Free kicks", "away", int),
-            home_crosses=get_number("Crosses", "home", int),
-            away_crosses=get_number("Crosses", "away", int),
             
             # Passing effectiveness
             home_passes_pct=get_percentage("Passes", "home"),
@@ -269,6 +267,8 @@ class FlashscoreProvider(MatchDataProvider):
             away_long_passes_pct=get_percentage("Long passes", "away"),
             home_passes_final_third_pct=get_percentage("Passes in final third", "home"),
             away_passes_final_third_pct=get_percentage("Passes in final third", "away"),
+            home_crosses_pct=get_percentage("Crosses", "home"),
+            away_crosses_pct=get_percentage("Crosses", "away"),
             
             # Defense and Discipline
             home_fouls=get_number("Fouls", "home", int),

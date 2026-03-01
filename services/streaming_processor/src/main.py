@@ -66,8 +66,6 @@ def main() -> None:
         StructField("away_offsides", IntegerType(), True),
         StructField("home_free_kicks", IntegerType(), True),
         StructField("away_free_kicks", IntegerType(), True),
-        StructField("home_crosses", IntegerType(), True),
-        StructField("away_crosses", IntegerType(), True),
         
         StructField("home_passes_pct", DoubleType(), True),
         StructField("away_passes_pct", DoubleType(), True),
@@ -75,6 +73,8 @@ def main() -> None:
         StructField("away_long_passes_pct", DoubleType(), True),
         StructField("home_passes_final_third_pct", DoubleType(), True),
         StructField("away_passes_final_third_pct", DoubleType(), True),
+        StructField("home_crosses_pct", DoubleType(), True),
+        StructField("away_crosses_pct", DoubleType(), True),
         
         StructField("home_fouls", IntegerType(), True),
         StructField("away_fouls", IntegerType(), True),

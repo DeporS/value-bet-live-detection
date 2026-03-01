@@ -84,8 +84,6 @@ class MatchStatsSnapshot(BaseEvent):
     away_offsides: int = Field(default=0, ge=0)
     home_free_kicks: int = Field(default=0, ge=0)
     away_free_kicks: int = Field(default=0, ge=0)
-    home_crosses: int = Field(default=0, ge=0)
-    away_crosses: int = Field(default=0, ge=0)
     
     # Percentage effectiveness (0.0 - 1.0)
     home_passes_pct: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -94,6 +92,8 @@ class MatchStatsSnapshot(BaseEvent):
     away_long_passes_pct: float = Field(default=0.0, ge=0.0, le=1.0)
     home_passes_final_third_pct: float = Field(default=0.0, ge=0.0, le=1.0)
     away_passes_final_third_pct: float = Field(default=0.0, ge=0.0, le=1.0)
+    home_crosses_pct: float = Field(default=0.0, ge=0.0, le=1.0)
+    away_crosses_pct: float = Field(default=0.0, ge=0.0, le=1.0)
     
     # --- Defense ---
     home_fouls: int = Field(default=0, ge=0)
