@@ -55,7 +55,7 @@ with DAG(
         return {
             "MATCH_ID": match_data["match_id"],
             "PROXY_URL": proxy_url,
-            "KAFKA_BROKER": "kafka:9092"
+            "KAFKA_BROKER": "kafka:29092"
         }
 
     @task.sensor(poke_interval=30, mode='reschedule')
