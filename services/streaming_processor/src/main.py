@@ -19,6 +19,8 @@ def create_spark_session() -> SparkSession:
         .appName("LiveFootballValueEngine") \
         .config("spark.jars.packages", f"org.apache.spark:spark-sql-kafka-0-10_2.12:{kafka_jar_version}") \
         .config("spark.sql.shuffle.partitions", "2") \
+        .config("spark.sql.streaming.checkpointFileManagerClass", "org.apache.spark.sql.execution.streaming.FileSystemBasedCheckpointFileManager") \
+        .config("spark.sql.streaming.stateStore.providerClass", "org.apache.spark.sql.execution.streaming.state.HDFSBackedStateStoreProvider") \
         .getOrCreate()
 
 def main() -> None:
@@ -251,31 +253,31 @@ def main() -> None:
         )) as value"""
     )
     
-    kafka_query = kafka_output_df.writeStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", kafka_broker) \
-        .option("topic", "model_features") \
-        .option("checkpointLocation", "/app/checkpoints/kafka_momentum_features") \
-        .outputMode("update") \
-        .start()
+    # kafka_query = kafka_output_df.writeStream \
+    #     .format("kafka") \
+    #     .option("kafka.bootstrap.servers", kafka_broker) \
+    #     .option("topic", "model_features") \
+    #     .option("checkpointLocation", "/app/checkpoints/kafka_momentum_features") \
+    #     .outputMode("update") \
+    #     .start()
 
-    # logger.info("Starting Parquet output stream for ML training data...")
+    logger.info("Starting Parquet output stream for ML training data...")
 
-    # training_df = momentum_df \
-    #     .withColumn("window_start", col("window.start")) \
-    #     .withColumn("window_end", col("window.end")) \
-    #     .withColumn("current_minute", expr("int(max_total_seconds / 60)")) \
-    #     .withColumn("current_second", expr("int(max_total_seconds % 60)")) \
-    #     .drop("window", "max_total_seconds")
+    training_df = momentum_df \
+        .withColumn("window_start", col("window.start")) \
+        .withColumn("window_end", col("window.end")) \
+        .withColumn("current_minute", expr("int(max_total_seconds / 60)")) \
+        .withColumn("current_second", expr("int(max_total_seconds % 60)")) \
+        .drop("window", "max_total_seconds")
     
     # Using append to save only the closed windows
-    # parquet_query = training_df.writeStream \
-    #     .format("parquet") \
-    #     .partitionBy("match_id") \
-    #     .option("path", "/app/data/training_set") \
-    #     .option("checkpointLocation", "/app/checkpoints/training_parquet") \
-    #     .outputMode("append") \
-    #     .start()
+    parquet_query = training_df.writeStream \
+        .format("parquet") \
+        .partitionBy("match_id") \
+        .option("path", "/app/data/training_set") \
+        .option("checkpointLocation", "/app/data/checkpoints/parquet_training_set") \
+        .outputMode("append") \
+        .start()
 
     # Wait for both queries to finish (they won't, as they are streaming)
     spark.streams.awaitAnyTermination()
