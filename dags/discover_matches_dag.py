@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def fetch_daily_matches(**kwargs) -> list:
     """
-    Fetches the list of matches once a day
+    Fetches the list of top matches once a day, strictly from the primary soccer container.
     """
     target_url = "https://www.flashscore.com/"
 
@@ -42,11 +42,23 @@ def fetch_daily_matches(**kwargs) -> list:
 
         # Use BeautifulSoup to parse the rendered HTML and find match elements
         soup = BeautifulSoup(html_content, 'html.parser')
-        match_elements = soup.find_all('div', class_=re.compile(r'event__match--(scheduled|live)'))
+        
+        # Find ONLY the first main 'sportName soccer' container
+        # This automatically ignores 'sportNews' and lower-tier soccer divs
+        main_soccer_container = soup.find('div', class_='sportName soccer')
+        
+        if not main_soccer_container:
+            logger.warning("Could not find the main 'sportName soccer' container. DOM might have changed.")
+            return []
+
+        # Find match elements STRICTLY inside the isolated main container
+        match_elements = main_soccer_container.find_all('div', class_=re.compile(r'event__match--(scheduled|live)'))
         
         logger.info(f"Found {len(match_elements)} rendered divs with matches.")
 
         daily_matches = []
+        today_date = datetime.now().strftime("%Y-%m-%d") # Needed for ISO format building
+
         for element in match_elements:
             raw_id = element.get('id', '')
 
@@ -56,7 +68,28 @@ def fetch_daily_matches(**kwargs) -> list:
                 # Regex validation to ensure we only keep safe and expected match IDs
                 if re.match(r'^[a-zA-Z0-9]{8}$', match_id):
                     time_div = element.find('div', class_='event__time')
-                    match_time = time_div.text.strip() if time_div else "Unknown"
+                    raw_time = time_div.text.strip() if time_div else "Unknown"
+
+                    # Look for standard "HH:MM" format
+                    time_match = re.search(r'(\d{2}):(\d{2})', raw_time)
+
+                    # Convert raw time (e.g., "21:00") into ISO 8601 format required by Airflow Sensor
+                    # Note: We assume the match is today since it's a daily scraper
+                    if time_match:
+                        # Case 1: Match is scheduled for later today
+                        hours, minutes = time_match.groups()
+                        formatted_start_time = f"{today_date}T{hours}:{minutes}:00"
+                    elif raw_time:
+                        # Case 2: Time text exists but it's not HH:MM (e.g., "15'", "HT").
+                        # This means the match is likely already live. 
+                        # Set start time to NOW so Airflow sensor passes immediately.
+                        logger.info(f"Match {match_id} appears live ('{raw_time}'). Scheduling immediately.")
+                        formatted_start_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                    else:
+                        # Case 3: Complete parsing failure. 
+                        # Skip this match completely to prevent Airflow zombie containers.
+                        logger.warning(f"No time data for {match_id}. Skipping to protect resources.")
+                        continue # Skips the rest of the loop and moves to the next match
 
                     home_div = element.find('div', class_='event__homeParticipant')
                     home_team = home_div.get_text(strip=True) if home_div else "Unknown"
@@ -66,7 +99,7 @@ def fetch_daily_matches(**kwargs) -> list:
 
                     daily_matches.append({
                         'match_id': match_id,
-                        'scheduled_time': match_time,
+                        'scheduled_time': formatted_start_time,
                         'home_team': home_team,
                         'away_team': away_team
                     })

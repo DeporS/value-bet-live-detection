@@ -13,7 +13,7 @@ async def run_brotli_test() -> None:
     await provider.connect()
 
     # Match ID from your working test
-    match_id = "zVCBfHtQ" 
+    match_id = "0UwSV7kt" 
     url_stats = f"{provider.base_url}/df_st_1_{match_id}"
 
     # Extract the proven headers and proxy URL from your working provider

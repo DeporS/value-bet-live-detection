@@ -30,7 +30,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CLUSTER_ID: 'live-football-engine-cluster' 
+      CLUSTER_ID: "live-football-engine-cluster"
     # volumes:
     #   - kafka_data:/tmp/kafka-logs
 
@@ -47,7 +47,7 @@ services:
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
     depends_on:
       - kafka
-  
+
   kafka-setup:
     image: apache/kafka:3.7.0
     container_name: kafka-setup
@@ -78,11 +78,11 @@ services:
       - POSTGRES_USER=engine_user
       - POSTGRES_PASSWORD=engine_pass
       - POSTGRES_DB=value_engine_db
-  
+
   ingestion-service:
     build:
       # context - main folder of the project
-      context: . 
+      context: .
       dockerfile: services/ingestion_service/Dockerfile
     container_name: ingestion_service
     networks:
@@ -96,10 +96,10 @@ services:
     restart: on-failure
     env_file:
       - .env
-  
+
   streaming-processor:
     build:
-      context: . 
+      context: .
       dockerfile: services/streaming_processor/Dockerfile
     container_name: streaming_processor
     networks:
@@ -113,15 +113,15 @@ services:
         condition: service_completed_successfully
 
   postgres-airflow:
-      image: postgres:13
-      restart: always
-      environment:
-        - POSTGRES_USER=airflow
-        # TODO: Change this password to something secure in production! --- IGNORE ---
-        - POSTGRES_PASSWORD=airflow_secure_db_pass 
-        - POSTGRES_DB=airflow
-      volumes:
-        - postgres-airflow-data:/var/lib/postgresql/data
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_USER=airflow
+      # TODO: Change this password to something secure in production! --- IGNORE ---
+      - POSTGRES_PASSWORD=airflow_secure_db_pass
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
 
   airflow-init:
     build:
@@ -177,4 +177,5 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
