@@ -1,5 +1,8 @@
 import pytest
+import asyncio
+import aiohttp
 from datetime import datetime, UTC
+from unittest.mock import patch, MagicMock
 from services.ingestion_service.src.infrastructure.flashscore_provider import FlashscoreProvider
 
 @pytest.fixture
@@ -98,3 +101,79 @@ def test_parse_flashscore_extract_goals_and_possession(provider: FlashscoreProvi
     assert snapshot.event_id.startswith("snap_"), (
         f"Expected event_id to start with 'snap_', got {snapshot.event_id}"
     )
+
+
+def test_parse_flashscore_empty_and_broken_payloads(provider: FlashscoreProvider):
+    """
+    Ensures the parser handles completely empty or broken strings gracefully 
+    without throwing IndexError or KeyError.
+    """
+    # Completely empty text
+    assert provider._parse_flashscore_format("", "", "broken_id") == []
+    
+    # Missing stats dict entirely (no SE tags)
+    mock_core = "DA÷3¬DE÷1¬DF÷1¬"
+    mock_stats_broken = "RANDOM÷JUNK¬~SOMETHING÷ELSE¬~"
+    assert provider._parse_flashscore_format(mock_stats_broken, mock_core, "broken_id") == []
+
+
+def test_handle_error_strike_triggers_shutdown(provider: FlashscoreProvider):
+    """
+    Ensures that after max allowed errors (10), the provider forces match status to 3 
+    to trigger a graceful container shutdown.
+    """
+    match_id = "strike_test_id"
+    
+    # Simulate 9 consecutive errors
+    for _ in range(9):
+        provider._handle_error_strike(match_id, "Proxy disconnected")
+        assert provider.current_match_status != 3
+        
+    # Strike 10 (Threshold reached)
+    provider._handle_error_strike(match_id, "Fatal WAF block")
+    
+    assert provider.consecutive_errors == 10
+    assert provider.current_match_status == 3, "Status should be set to 3 to kill the process."
+
+
+@patch('services.ingestion_service.src.infrastructure.flashscore_provider.datetime')
+def test_parse_flashscore_live_match_time(mock_datetime, provider: FlashscoreProvider):
+    """
+    Ensures the 2nd half time is calculated correctly based on absolute timestamps.
+    """
+    # Set a fixed "current time" to freeze the environment
+    mock_now = MagicMock()
+    mock_now.timestamp.return_value = 1700002000 # Pretend it is exactly this second
+    mock_datetime.now.return_value = mock_now
+    mock_datetime.UTC = UTC 
+
+    # DD = 1700001400 (Start of 2nd half). 
+    # Difference = 1700002000 - 1700001400 = 600 seconds (exactly 10 minutes).
+    # Expected minute: 45 + 10 = 55th minute.
+    mock_core_live = "DA÷1¬DB÷13¬DD÷1700001400¬DE÷1¬DF÷0¬"
+    mock_stats_minimal = "SE÷Match¬~SG÷Ball possession¬SH÷50%¬SI÷50%¬~"
+
+    result = provider._parse_flashscore_format(mock_stats_minimal, mock_core_live, "live_id")
+    
+    assert len(result) == 1
+    snapshot = result[0]
+    
+    assert snapshot.minute == 55, "Time math failed to calculate the 55th minute."
+    assert snapshot.second == 0
+
+
+@pytest.mark.asyncio
+@patch('services.ingestion_service.src.infrastructure.flashscore_provider.FlashscoreProvider._fetch_text')
+async def test_fetch_latest_events_timeout(mock_fetch_text, provider: FlashscoreProvider):
+    """
+    Ensures that a network timeout results in an empty list, protecting the ingestion loop
+    from crashing when Flashscore servers are slow.
+    """
+    provider.session = MagicMock() # Trick the provider into thinking it's connected
+    
+    # Force the internal network call to raise an asyncio TimeoutError
+    mock_fetch_text.side_effect = asyncio.TimeoutError("Connection timed out")
+    
+    result = await provider.fetch_latest_events("timeout_id")
+    
+    assert result == [], "Parser should swallow the timeout and return an empty list."
