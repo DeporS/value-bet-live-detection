@@ -1,3 +1,4 @@
+from typing import List, Dict
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.decorators import task
@@ -27,7 +28,7 @@ with DAG(
 ) as dag:
 
     @task
-    def discover_matches() -> list[dict]:
+    def discover_matches() -> List[Dict]:
         """
         Executes the external web scraper. TaskFlow API automatically serializes 
         the returned list and pushes it to XCom securely.
@@ -35,7 +36,7 @@ with DAG(
         return fetch_daily_matches()
 
     @task
-    def calculate_wakeup_time(match_data: dict) -> str:
+    def calculate_wakeup_time(match_data: Dict) -> str:
         """
         Calculates the exact datetime to wake up the sensor (2 minutes before kick-off).
         """
@@ -44,7 +45,7 @@ with DAG(
         return wakeup_time.isoformat()
 
     @task
-    def build_container_environment(match_data: dict) -> dict:
+    def build_container_environment(match_data: Dict) -> Dict:
         """
         Constructs the secure environment variable dictionary for the container.
         """

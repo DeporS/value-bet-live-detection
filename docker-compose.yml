@@ -118,7 +118,7 @@ services:
     environment:
       - POSTGRES_USER=airflow
       # TODO: Change this password to something secure in production! --- IGNORE ---
-      - POSTGRES_PASSWORD=airflow_secure_db_pass
+      - POSTGRES_PASSWORD=${AIRFLOW_DB_PASSWORD}
       - POSTGRES_DB=airflow
     volumes:
       - postgres-airflow-data:/var/lib/postgresql/data
@@ -130,23 +130,26 @@ services:
     depends_on:
       - postgres-airflow
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow_secure_db_pass@postgres-airflow/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres-airflow/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - _AIRFLOW_DB_UPGRADE=true
-      - _AIRFLOW_WWW_USER_CREATE=true
-      - _AIRFLOW_WWW_USER_USERNAME=admin
-      - _AIRFLOW_WWW_USER_PASSWORD=admin
-    command: version
+      - AIRFLOW_ADMIN_USERNAME=${AIRFLOW_ADMIN_USERNAME}
+      - AIRFLOW_ADMIN_PASSWORD=${AIRFLOW_ADMIN_PASSWORD}
+      - AIRFLOW_ADMIN_EMAIL=${AIRFLOW_ADMIN_EMAIL}
+    volumes:
+      - ./scripts/init_user.sh:/opt/airflow/init_user.sh
+    # Automatically execute database migrations and create the default admin user
+    command: >
+      bash -c "
+        bash /opt/airflow/init_user.sh
+      "
 
   airflow-webserver:
     build:
       context: .
       dockerfile: Dockerfile.airflow
     restart: always
-    depends_on:
-      - postgres-airflow
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow_secure_db_pass@postgres-airflow/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres-airflow/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=false # Turn off example DAGs to keep the UI clean
     volumes:
@@ -161,16 +164,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    depends_on:
+      postgres-airflow:
+        condition: service_started
+      airflow-init:
+        condition: service_completed_successfully
 
   airflow-scheduler:
     build:
       context: .
       dockerfile: Dockerfile.airflow
     restart: always
-    depends_on:
-      - postgres-airflow
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow_secure_db_pass@postgres-airflow/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres-airflow/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
     volumes:
@@ -179,3 +185,8 @@ services:
       - ./plugins:/opt/airflow/plugins
       - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
+    depends_on:
+      postgres-airflow:
+        condition: service_started
+      airflow-init:
+        condition: service_completed_successfully
