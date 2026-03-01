@@ -26,91 +26,75 @@ def test_parse_flashscore_extract_goals_and_possession(provider: FlashscoreProvi
         match_id=mock_match_id
     )
 
-    # Assert basic structure
-    assert len(result) == 1
+    # Assert response structure
+    assert len(result) == 1, f"Expected exactly 1 snapshot, got {len(result)}"
     snapshot = result[0]
 
-    assert snapshot.event_type == "stats_snapshot"
-    assert snapshot.event_id.startswith("snap_")
+    expected_values = {
+        "event_type": "stats_snapshot",
+        "match_id": "KbUrxW1T",
+        "minute": 90,
+        "second": 0,
+        "home_goals": 5,
+        "away_goals": 2,
+        "home_xg": 1.84,
+        "away_xg": 1.85,
+        "home_possession": 0.49,
+        "away_possession": 0.51,
+        "home_total_shots": 18,
+        "away_total_shots": 11,
+        "home_shots_on_target": 7,
+        "away_shots_on_target": 4,
+        "home_shots_off_target": 4,
+        "away_shots_off_target": 4,
+        "home_shots_inside_box": 13,
+        "away_shots_inside_box": 8,
+        "home_shots_outside_box": 5,
+        "away_shots_outside_box": 3,
+        "home_big_chances": 2,
+        "away_big_chances": 2,
+        "home_corner_kicks": 10,
+        "away_corner_kicks": 5,
+        "home_offsides": 1,
+        "away_offsides": 1,
+        "home_free_kicks": 11,
+        "away_free_kicks": 12,
+        "home_passes_pct": 0.81,
+        "away_passes_pct": 0.79,
+        "home_long_passes_pct": 0.44,
+        "away_long_passes_pct": 0.44,
+        "home_passes_final_third_pct": 0.74,
+        "away_passes_final_third_pct": 0.58,
+        "home_crosses_pct": 0.1,
+        "away_crosses_pct": 0.19,
+        "home_fouls": 12,
+        "away_fouls": 11,
+        "home_tackles_pct": 0.48,
+        "away_tackles_pct": 0.62,
+        "home_duels_won": 46,
+        "away_duels_won": 49,
+        "home_clearances": 22,
+        "away_clearances": 19,
+        "home_interceptions": 6,
+        "away_interceptions": 13,
+        "home_yellow_cards": 2,
+        "away_yellow_cards": 2,
+        "home_red_cards": 0,
+        "away_red_cards": 0,
+        "home_goalkeeper_saves": 3,
+        "away_goalkeeper_saves": 2,
+        "home_xgot_faced": 1.95,
+        "away_xgot_faced": 2.44,
+        "home_goals_prevented": -0.05,
+        "away_goals_prevented": -1.56,
+    }
 
-    assert snapshot.match_id == "KbUrxW1T"
-    assert snapshot.minute == 90
-    assert snapshot.second == 0
+    for field, expected in expected_values.items():
+        actual = getattr(snapshot, field)
+        assert actual == expected, (
+            f"Field '{field}' mismatch: expected {expected}, got {actual}"
+        )
 
-    assert snapshot.home_goals == 5
-    assert snapshot.away_goals == 2
-
-    assert snapshot.home_xg == 1.84
-    assert snapshot.away_xg == 1.85
-
-    assert snapshot.home_possession == 0.49
-    assert snapshot.away_possession == 0.51
-
-    assert snapshot.home_total_shots == 18
-    assert snapshot.away_total_shots == 11
-
-    assert snapshot.home_shots_on_target == 7
-    assert snapshot.away_shots_on_target == 4
-
-    assert snapshot.home_shots_off_target == 4
-    assert snapshot.away_shots_off_target == 4
-
-    assert snapshot.home_shots_inside_box == 13
-    assert snapshot.away_shots_inside_box == 8
-
-    assert snapshot.home_shots_outside_box == 5
-    assert snapshot.away_shots_outside_box == 3
-
-    assert snapshot.home_big_chances == 2
-    assert snapshot.away_big_chances == 2
-
-    assert snapshot.home_corner_kicks == 10
-    assert snapshot.away_corner_kicks == 5
-
-    assert snapshot.home_offsides == 1
-    assert snapshot.away_offsides == 1
-
-    assert snapshot.home_free_kicks == 11
-    assert snapshot.away_free_kicks == 12
-
-    assert snapshot.home_passes_pct == 0.81
-    assert snapshot.away_passes_pct == 0.79
-
-    assert snapshot.home_long_passes_pct == 0.44
-    assert snapshot.away_long_passes_pct == 0.44
-
-    assert snapshot.home_passes_final_third_pct == 0.74
-    assert snapshot.away_passes_final_third_pct == 0.58
-
-    assert snapshot.home_crosses_pct == 0.1
-    assert snapshot.away_crosses_pct == 0.19
-
-    assert snapshot.home_fouls == 12
-    assert snapshot.away_fouls == 11
-
-    assert snapshot.home_tackles_pct == 0.48
-    assert snapshot.away_tackles_pct == 0.62
-
-    assert snapshot.home_duels_won == 46
-    assert snapshot.away_duels_won == 49
-
-    assert snapshot.home_clearances == 22
-    assert snapshot.away_clearances == 19
-
-    assert snapshot.home_interceptions == 6
-    assert snapshot.away_interceptions == 13
-
-    assert snapshot.home_yellow_cards == 2
-    assert snapshot.away_yellow_cards == 2
-
-    assert snapshot.home_red_cards == 0
-    assert snapshot.away_red_cards == 0
-
-    assert snapshot.home_goalkeeper_saves == 3
-    assert snapshot.away_goalkeeper_saves == 2
-
-    assert snapshot.home_xgot_faced == 1.95
-    assert snapshot.away_xgot_faced == 2.44
-
-    assert snapshot.home_goals_prevented == -0.05
-    assert snapshot.away_goals_prevented == -1.56
+    assert snapshot.event_id.startswith("snap_"), (
+        f"Expected event_id to start with 'snap_', got {snapshot.event_id}"
+    )
