@@ -9,6 +9,14 @@ from airflow.models import Variable
 
 from scripts.flashscore_scraper import fetch_daily_matches
 
+@task
+def send_discord_alert(match_data: Dict, status: str) -> None:
+    """
+    Sends an alert to Discord with match details and status.
+    Status START or END indicates whether the match is about to start or has ended.
+    """
+    
+
 default_args = {
     'owner': 'DeporS',
     'depends_on_past': False,
@@ -78,6 +86,9 @@ with DAG(
 
         sensor_task = wait_for_kickoff(wakeup_time)
 
+        start_alert = send_discord_alert(match_data, status="START")
+        end_alert = send_discord_alert(match_data, status="END")
+
         spawn_ingestion_container = DockerOperator(
             task_id='run_match_ingestion',
             image='value-bet-live-detection-ingestion-service:latest',
@@ -90,7 +101,7 @@ with DAG(
         )
 
         # Link tasks INSIDE the cloned group
-        sensor_task >> spawn_ingestion_container
+        sensor_task >> start_alert >> spawn_ingestion_container >> end_alert
     
     # Fetch the list of matches
     matches_list = discover_matches()
