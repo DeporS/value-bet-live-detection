@@ -12,6 +12,8 @@ aiokafka = "^0.10.0"
 pyspark = "3.5.0"
 aiohttp = "^3.13.3"
 brotli = "^1.2.0"
+requests = "^2.32.5"
+python-dotenv = "^1.2.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
