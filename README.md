@@ -2,22 +2,37 @@
 
 ## Installing poetry
 
-- ```curl -sSL https://install.python-poetry.org | python3 -```
-- export PATH="$HOME/.local/bin:$PATH"
-- source ~/.bashrc
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+```bash
+source ~/.bashrc
+```
 
 Go to project folder
 
-- poetry install
+```bash
+poetry install
+```
 
 ## Run main program
 
+```bash
 PYTHONPATH=$(pwd) poetry run python services/ingestion_service/src/main.py
+```
 
 ## Run experiments
 
-- PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_flashscore.py
-- PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_brotli.py
+```bash
+PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_flashscore.py
+```
+
+```bash
+PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python experiments/test_brotli.py
+```
 
 ## Run just the airflow containers
 
