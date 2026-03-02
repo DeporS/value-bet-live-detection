@@ -1,5 +1,7 @@
 from typing import List, Dict
 from datetime import datetime, timedelta
+import os
+import requests
 
 from airflow import DAG
 from airflow.decorators import task, task_group
@@ -15,7 +17,26 @@ def send_discord_alert(match_data: Dict, status: str) -> None:
     Sends an alert to Discord with match details and status.
     Status START or END indicates whether the match is about to start or has ended.
     """
-    
+    WEBHOOK_URL = os.getenv("DISCORD_AIRFLOW_ALERT_URL")
+    if not WEBHOOK_URL:
+        print("DISCORD_AIRFLOW_ALERT_URL not set in environment variables!")
+        return  # Do not proceed if webhook URL is not set
+
+    match_id = match_data.get("match_id", "Nieznany ID")
+    home_team = match_data.get("home_team", "Nieznany Gospodarz")
+    away_team = match_data.get("away_team", "Nieznany Gość")
+
+    if status == "START":
+        message = f"**Rozpoczęto pobieranie meczu!** ID: `{match_id}` - {home_team} vs {away_team}. Kontener startuje."
+    elif status == "END":
+        message = f"**Zakończono pobieranie meczu!** ID: `{match_id}` - {home_team} vs {away_team}. Kontener usunięty."
+    else:
+        message = f"ℹStatus meczu `{match_id}` - {home_team} vs {away_team}: {status}"
+        
+    try:
+        requests.post(WEBHOOK_URL, json={"content": message}, timeout=5)
+    except Exception as e:
+        print(f"Błąd sieci podczas wysyłania alertu: {e}")
 
 default_args = {
     'owner': 'DeporS',
