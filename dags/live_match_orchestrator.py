@@ -31,7 +31,7 @@ def send_discord_alert(match_data: Dict, status: str) -> None:
     elif status == "END":
         message = f"**Zakończono pobieranie meczu!** ID: `{match_id}` - {home_team} vs {away_team}. Kontener usunięty."
     else:
-        message = f"ℹStatus meczu `{match_id}` - {home_team} vs {away_team}: {status}"
+        message = f"ℹ**Status meczu `{match_id}` - {home_team} vs {away_team}: {status}**"
         
     try:
         requests.post(WEBHOOK_URL, json={"content": message}, timeout=5)
