@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL_TEST")
+WEBHOOK_URL = os.getenv("DISCORD_AIRFLOW_ALERT_URL")
 
 if not WEBHOOK_URL:
-    print("DISCORD_WEBHOOK_URL_TEST couldn't be loaded from .env!")
+    print("DISCORD_AIRFLOW_ALERT_URL couldn't be loaded from .env!")
     exit(1)
 
 payload = {

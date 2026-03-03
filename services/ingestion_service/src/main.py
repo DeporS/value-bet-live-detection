@@ -21,8 +21,10 @@ async def main() -> None:
 
     # Environment variables
     KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092") # Address of Kafka cluster
-    MATCH_ID = os.getenv("MATCH_ID", "M1zZ0lxn") # For testing set to a fixed match ID
+    MATCH_ID = os.getenv("MATCH_ID", "t45F80vA") # For testing set to a fixed match ID
     PROXY_URL = os.getenv("PROXY_URL") # Read proxy URL from env
+    HOME_TEAM = os.getenv("HOME_TEAM", "Unknown Home")
+    AWAY_TEAM = os.getenv("AWAY_TEAM", "Unknown Away")
 
     # Initialize provider and publisher (Adapters)
     provider = FlashscoreProvider(proxy_url=PROXY_URL)
@@ -60,7 +62,13 @@ async def main() -> None:
 
     # Run the ingestion loop in the background
     ingestion_task = asyncio.create_task(
-        orchestrator.run_ingestion_loop(match_id=MATCH_ID, interval_seconds=10, stop_event=stop_event)
+        orchestrator.run_ingestion_loop(
+            match_id=MATCH_ID, 
+            home_team=HOME_TEAM,
+            away_team=AWAY_TEAM,
+            interval_seconds=10, 
+            stop_event=stop_event
+        )
     )
 
     # Wait until a shutdown signal is received

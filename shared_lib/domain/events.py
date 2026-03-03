@@ -10,6 +10,9 @@ class BaseEvent(BaseModel):
     match_id: str = Field(..., description="Identifier for the match")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Timestamp of the event") # default_factory and lambda to ensure dynamic default value at runtime
 
+    home_team: Optional[str] = Field(default=None, description="Name of the home team")
+    away_team: Optional[str] = Field(default=None, description="Name of the away team")
+
 class MatchEvent(BaseEvent):
     """Match events (e.g., goal, strike, corner, etc.)"""
     event_type: Literal["shot", "goal", "corner", "card", "possession_update"]

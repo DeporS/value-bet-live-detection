@@ -19,7 +19,7 @@ class IngestionOrchestrator:
         self.match_events_topic = match_events_topic
         self.odds_topic = odds_topic
     
-    async def run_ingestion_loop(self, match_id: str, interval_seconds: int = 5, stop_event: asyncio.Event = None) -> None:
+    async def run_ingestion_loop(self, match_id: str, home_team: str, away_team: str, interval_seconds: int = 5, stop_event: asyncio.Event = None) -> None:
         """Continuously fetch and publish match data at specified intervals."""
         
         logger.info(f"Starting ingestion loop for match_id={match_id} with interval={interval_seconds}s")
@@ -40,9 +40,13 @@ class IngestionOrchestrator:
                     logger.error(f"Error fetching events: {events}")
                     
                 elif events:
+                    enriched_events = [
+                        event.model_copy(update={"home_team": home_team, "away_team": away_team}) 
+                        for event in events
+                    ]
                     # Send to Kafka
-                    await self.publisher.publish_match_events(self.match_events_topic, events)
-                    logger.info(f"Published {len(events)} match events for match_id={match_id}")
+                    await self.publisher.publish_match_events(self.match_events_topic, enriched_events)
+                    logger.info(f"Published {len(enriched_events)} match events for match_id={match_id}")
                 
                 if isinstance(odds, Exception):
                     logger.error(f"Error fetching odds: {odds}")

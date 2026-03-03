@@ -83,6 +83,8 @@ with DAG(
         
         return {
             "MATCH_ID": match_data["match_id"],
+            "HOME_TEAM": match_data.get("home_team", "Unknown_Home"),
+            "AWAY_TEAM": match_data.get("away_team", "Unknown_Away"),
             "PROXY_URL": proxy_url,
             "KAFKA_BROKER": "kafka:29092"
         }
@@ -107,8 +109,8 @@ with DAG(
 
         sensor_task = wait_for_kickoff(wakeup_time)
 
-        start_alert = send_discord_alert(match_data, status="START")
-        end_alert = send_discord_alert(match_data, status="END")
+        start_alert = send_discord_alert.override(task_id='alert_match_start')(match_data, status="START")
+        end_alert = send_discord_alert.override(task_id='alert_match_end')(match_data, status="END")
 
         spawn_ingestion_container = DockerOperator(
             task_id='run_match_ingestion',

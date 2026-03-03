@@ -108,6 +108,8 @@ services:
       - ./data:/app/data
     environment:
       - KAFKA_BROKER=kafka:29092
+      # ALERTS
+      - DISCORD_GOAL_ALERT_WEBHOOK_URL=${DISCORD_GOAL_ALERT_WEBHOOK_URL}
     depends_on:
       kafka-setup:
         condition: service_completed_successfully
@@ -117,7 +119,6 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=airflow
-      # TODO: Change this password to something secure in production! --- IGNORE ---
       - POSTGRES_PASSWORD=${AIRFLOW_DB_PASSWORD}
       - POSTGRES_DB=airflow
     volumes:
