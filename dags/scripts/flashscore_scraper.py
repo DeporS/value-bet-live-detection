@@ -21,8 +21,8 @@ def fetch_daily_matches(**kwargs) -> list:
             page = browser.new_page()
             
             logger.info(f"Entering: {target_url} and waiting for network idle...")
-            # Enter the URL and wait until the network is idle
-            page.goto(target_url, wait_until="networkidle")
+            # Enter the URL and wait until the DOM content is loaded
+            page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
             
             try:
                 # Wait up to 15 seconds for the match elements to appear in the DOM
