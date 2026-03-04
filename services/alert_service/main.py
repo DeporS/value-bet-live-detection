@@ -104,14 +104,14 @@ def main() -> None:
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ **GOL!**"
                         msg_content = (
-                            f"**{title}** \n"
+                            f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**"
                         )
                     else:
                         title = "🚨 **KOREKTA!**"
                         msg_content = (
-                            f"**{title}** \n"
+                            f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'\n"
                             f"**{last_home} - {last_away}** → **{current_home} - {current_away}**"
