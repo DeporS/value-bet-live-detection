@@ -215,7 +215,8 @@ services:
       - KAFKA_BROKER=kafka:29092
       - DISCORD_GOAL_ALERT_WEBHOOK_URL=${DISCORD_GOAL_ALERT_WEBHOOK_URL}
     depends_on:
-      - kafka
+      kafka-setup:
+        condition: service_completed_successfully
     security_opt:
       - no-new-privileges:true
     networks:
