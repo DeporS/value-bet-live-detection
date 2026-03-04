@@ -115,7 +115,7 @@ def main() -> None:
                 if current_home != last_home or current_away != last_away:
                     
                     # Jitter check
-                    if current_home == 0 and current_away == 0 and (last_home > 0 or last_away > 0) and current_minute > 1:
+                    if current_home == 0 and current_away == 0 and (last_home > 0 or last_away > 0):
                         # Suspicious zeros
                         match_states[match_id]["zero_strikes"] = match_states[match_id].get("zero_strikes", 0) + 1
                         
