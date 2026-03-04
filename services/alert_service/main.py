@@ -111,7 +111,7 @@ def main() -> None:
                     else:
                         title = "🚨 **KOREKTA!**"
                         msg_content = (
-                            f"**{title}**\n"
+                            f"**{title}** \n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'\n"
                             f"**{last_home} - {last_away}** → **{current_home} - {current_away}**"
