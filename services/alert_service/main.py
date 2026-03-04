@@ -66,11 +66,16 @@ def main() -> None:
                 current_home = event.get("home_goals", 0)
                 current_away = event.get("away_goals", 0)
                 current_status = event.get("match_status", 0)
+                current_minute = event.get("minute", 0)
+                current_second = event.get("second", 0)
 
                 # Initialize state for new matches
                 if match_id not in match_states:
                     match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status, "already_started": False}
                     continue
+
+                if current_second > 3:
+                    current_minute += 1
 
                 last_state = match_states[match_id]
                 last_home = last_state["home"]
@@ -98,10 +103,20 @@ def main() -> None:
                     # Check if its a new goal or a correction (VAR)
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ **GOL!**"
+                        msg_content = (
+                            f"**{title}**\n"
+                            f"{home_team} vs {away_team}\n"
+                            f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**"
+                        )
                     else:
                         title = "🚨 **KOREKTA!**"
-
-                    msg_content = f"{title} | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
+                        msg_content = (
+                            f"**{title}**\n"
+                            f"{home_team} vs {away_team}\n"
+                            f"⏱️ {current_minute}'\n"
+                            f"**{last_home} - {last_away}** → **{current_home} - {current_away}**"
+                        )
+                    
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
                     logger.info(f"Sent alert to discord: {current_home} - {current_away}")
