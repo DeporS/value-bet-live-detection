@@ -26,7 +26,7 @@ def main() -> None:
     consumer.subscribe(['raw_match_events'])
 
     # Local state
-    # {"match_id": {"home": 0, "away": 0}}
+    # {"match_id": {"home": 0, "away": 0, "status": 0}}
     match_states = {}
 
     logger.info("Alert service started. Listening for match events...")
@@ -50,15 +50,30 @@ def main() -> None:
                 
                 current_home = event.get("home_goals", 0)
                 current_away = event.get("away_goals", 0)
+                current_status = event.get("match_status", 0)
 
                 # Initialize state for new matches
                 if match_id not in match_states:
-                    match_states[match_id] = {"home": current_home, "away": current_away}
+                    match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status}
                     continue
 
                 last_state = match_states[match_id]
                 last_home = last_state["home"]
                 last_away = last_state["away"]
+                last_status = last_state["status"]
+
+                # --- Match finished ---
+                if current_status == 3 and last_status != 3:
+                    msg_content = f"🏁 **KONIEC MECZU** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
+                    
+                    match_states[match_id]["status"] = 3 # Spam prevention flag
+                    requests.post(
+                        webhook_url, 
+                        json={"content": msg_content}, 
+                        timeout=3.0
+                    )
+                    logger.info(f"Wysłano powiadomienie o końcu meczu: {current_home} - {current_away}")
+                    continue # Skip goal alert logic for finished matches
 
                 # --- Main logic ---
                 if current_home != last_home or current_away != last_away:
@@ -71,8 +86,9 @@ def main() -> None:
 
                     msg_content = f"{title} | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
                     
-                    # Update local state
-                    match_states[match_id] = {"home": current_home, "away": current_away}
+                    # Update goals local state
+                    match_states[match_id]["home"] = current_home
+                    match_states[match_id]["away"] = current_away
 
                     # dispatch alert to Discord
                     requests.post(

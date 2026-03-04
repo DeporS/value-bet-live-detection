@@ -231,6 +231,9 @@ class FlashscoreProvider(MatchDataProvider):
             pre_match_draw_odds=float(os.getenv("ODDS_DRAW", "1.0")),
             pre_match_away_odds=float(os.getenv("ODDS_AWAY", "1.0")),
 
+            # match status
+            match_status=granular_status,
+
             # Time
             minute=match_minute,
             second=match_second,

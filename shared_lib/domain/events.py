@@ -59,6 +59,9 @@ class MatchStatsSnapshot(BaseEvent):
     pre_match_draw_odds: float = Field(default=1.0, ge=1.0, description="Closing draw odds before match started")
     pre_match_away_odds: float = Field(default=1.0, ge=1.0, description="Closing away odds before match started")
 
+    # --- Match Status ---
+    match_status: int = Field(default=0, description="Granular match status (3 = Finished)")
+
     # --- Time ---
     minute: int = Field(default=0, ge=0, le=150)
     second: int = Field(default=0, ge=0, le=59)
