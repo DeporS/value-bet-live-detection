@@ -1,7 +1,10 @@
+from datetime import datetime, time
+import os
 import re
 import logging
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+import random
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -16,13 +19,22 @@ def test_fetch_dynamic_matches():
         page = browser.new_page()
         
         logger.info(f"Entering: {target_url} and waiting for network idle...")
-        # Enter the URL and wait until the network is idle
-        page.goto(target_url, wait_until="networkidle")
+        # Enter the URL and wait until the DOM content is loaded
+        page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
         
         try:
             # Wait up to 15 seconds for the match elements to appear in the DOM
             page.wait_for_selector('.event__match', timeout=15000)
-            logger.info("Successfully waited for match elements to appear.")
+            logger.info("First matches appeared. Allowing SPA to fully render...")
+
+            # Wait an additional 5 seconds to ensure all JavaScript-rendered content is loaded
+            page.wait_for_timeout(5000)
+
+            # Scroll down
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+            page.wait_for_timeout(1000) # Wait for any additional content to load after scrolling
+            logger.info("Successfully waited for all match elements to populate.")
         except Exception as e:
             logger.error("Timeout: Match elements did not appear within 15 seconds.")
             browser.close()
@@ -32,11 +44,11 @@ def test_fetch_dynamic_matches():
         html_content = page.content()
         browser.close()
 
-    # Use BeautifulSoup to parse the rendered HTML and find match elements
-    soup = BeautifulSoup(html_content, 'html.parser')
-    match_elements = soup.find_all('div', class_=re.compile(r'event__match--(scheduled|live)'))
-    
-    logger.info(f"Found {len(match_elements)} rendered divs with matches.")
+        # Use BeautifulSoup to parse the rendered HTML and find match elements
+        soup = BeautifulSoup(html_content, 'html.parser')
+        match_elements = soup.find_all('div', class_=re.compile(r'event__match--(scheduled|live)'))
+        
+        logger.info(f"Found {len(match_elements)} rendered divs with matches.")
 
     daily_matches = []
     for element in match_elements:
@@ -64,7 +76,7 @@ def test_fetch_dynamic_matches():
                 })
             else:
                 logger.warning(f"Rejected invalid ID: {raw_id}")
-    
+
     logger.info(f"Finally found {len(daily_matches)} valid and safe match IDs.")
 
     for match in daily_matches[:5]:

@@ -54,6 +54,11 @@ class MatchStatsSnapshot(BaseEvent):
     """Full snapshot of match statistics at a given point in time. Useful for training data and model features."""
     event_type: Literal["stats_snapshot"] = "stats_snapshot"
 
+    # --- Pre-match Odds ---
+    pre_match_home_odds: float = Field(default=1.0, ge=1.0, description="Closing home odds before match started")
+    pre_match_draw_odds: float = Field(default=1.0, ge=1.0, description="Closing draw odds before match started")
+    pre_match_away_odds: float = Field(default=1.0, ge=1.0, description="Closing away odds before match started")
+
     # --- Time ---
     minute: int = Field(default=0, ge=0, le=150)
     second: int = Field(default=0, ge=0, le=59)

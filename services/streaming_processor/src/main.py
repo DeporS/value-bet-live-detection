@@ -1,6 +1,5 @@
 import os
 import logging
-import requests
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     from_json, col, window, sum as _sum, max as spark_max, min as spark_min, avg, struct, to_json, expr
@@ -11,25 +10,6 @@ from pyspark.sql.types import (
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("StreamingProcessor")
-
-
-def process_goal_alerts_batch(df, epoch_id) -> None:
-    """Processess microbatches and sends goal alerts to Discord"""
-    webhook_url = os.getenv("DISCORD_GOAL_ALERT_WEBHOOK_URL")
-    if not webhook_url:
-        logger.warning("DISCORD_GOAL_ALERT_WEBHOOK_URL not set in environment variables! Skipping goal alert sending.")
-        return
-    
-    rows = df.collect()
-
-    for row in rows:
-        msg = f"**GOL!** | {row.home_team} vs {row.away_team} | Wynik: **{row.home_goals} - {row.away_goals}**"
-
-        try:
-            # Small timeout to prevent blocking the streaming job in case of network issues with Discord
-            requests.post(webhook_url, json={"content": msg}, timeout=3)
-        except Exception as e:
-            logger.error(f"Błąd sieci podczas wysyłania alertu na Discorda: {e}")
 
 
 def create_spark_session() -> SparkSession:
@@ -61,6 +41,10 @@ def main() -> None:
         StructField("event_type", StringType(), False),
         StructField("home_team", StringType(), True),
         StructField("away_team", StringType(), True),
+
+        StructField("pre_match_home_odds", DoubleType(), True),
+        StructField("pre_match_draw_odds", DoubleType(), True),
+        StructField("pre_match_away_odds", DoubleType(), True),
         
         StructField("minute", IntegerType(), True),
         StructField("second", IntegerType(), True),
@@ -141,23 +125,6 @@ def main() -> None:
     # Filter for stats snapshots
     stats_df = parsed_df.filter(col("event_type") == "stats_snapshot")
 
-    logger.info("Goal alerts configuration")
-
-    # Filter 0:0 out
-    goals_df = stats_df.filter((col("home_goals") > 0) | (col("away_goals") > 0))
-
-    # Deduplicate goal events to prevent multiple alerts for the same goal
-    unique_goals_stream = goals_df \
-        .withWatermark("timestamp", "3 hours") \
-        .dropDuplicates(["match_id", "home_goals", "away_goals"])
-
-    # Send goal alerts to Discord using foreachBatch for more control and error handling
-    alerts_query = unique_goals_stream.writeStream \
-        .outputMode("append") \
-        .option("checkpointLocation", "/app/data/checkpoints/goal_alerts_v2") \
-        .foreachBatch(process_goal_alerts_batch) \
-        .start()
-
     # Calculate momentum features using a rolling window of 5 minutes, updated every minute
     momentum_df = stats_df \
         .withWatermark("timestamp", "2 minutes") \
@@ -168,6 +135,11 @@ def main() -> None:
             col("away_team")
         ) \
         .agg(
+            # Pre-match odds
+            spark_max("pre_match_home_odds").alias("pre_match_home_odds"),
+            spark_max("pre_match_draw_odds").alias("pre_match_draw_odds"),
+            spark_max("pre_match_away_odds").alias("pre_match_away_odds"),
+
             # Current match state
             spark_max(expr("minute * 60 + second")).alias("max_total_seconds"),
             spark_max("home_goals").alias("home_goals"),
@@ -256,6 +228,7 @@ def main() -> None:
             window.end as window_end, 
             match_id, 
             home_team, away_team,
+            pre_match_home_odds, pre_match_draw_odds, pre_match_away_odds,
             
             -- Time & Score
             int(max_total_seconds / 60) as current_minute, 

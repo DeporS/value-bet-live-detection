@@ -204,3 +204,21 @@ services:
         condition: service_started
       airflow-init:
         condition: service_completed_successfully
+
+  alert-service:
+    build:
+      context: .
+      dockerfile: services/alert_service/Dockerfile
+    container_name: valuebet_alert_service
+    restart: unless-stopped
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - DISCORD_GOAL_ALERT_WEBHOOK_URL=${DISCORD_GOAL_ALERT_WEBHOOK_URL}
+    depends_on:
+      - kafka
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - value_engine_net
+    volumes:
+      - ./services/alert_service:/app/services/alert_service:ro

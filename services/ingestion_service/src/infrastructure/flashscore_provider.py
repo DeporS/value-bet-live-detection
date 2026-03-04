@@ -1,6 +1,7 @@
 import aiohttp
 import logging
 import asyncio
+import os
 from typing import List, Optional
 from datetime import datetime, UTC
 
@@ -224,6 +225,11 @@ class FlashscoreProvider(MatchDataProvider):
             event_id=f"snap_{match_id}_{datetime.now().timestamp()}",
             match_id=match_id,
             timestamp=datetime.now(UTC),
+
+            # Pre-match odds got from airflow env variables
+            pre_match_home_odds=float(os.getenv("ODDS_HOME", "1.0")),
+            pre_match_draw_odds=float(os.getenv("ODDS_DRAW", "1.0")),
+            pre_match_away_odds=float(os.getenv("ODDS_AWAY", "1.0")),
 
             # Time
             minute=match_minute,

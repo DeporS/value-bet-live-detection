@@ -85,6 +85,9 @@ with DAG(
             "MATCH_ID": match_data["match_id"],
             "HOME_TEAM": match_data.get("home_team", "Unknown_Home"),
             "AWAY_TEAM": match_data.get("away_team", "Unknown_Away"),
+            "ODDS_HOME": str(match_data.get("odds_home", "0.0")),
+            "ODDS_DRAW": str(match_data.get("odds_draw", "0.0")),
+            "ODDS_AWAY": str(match_data.get("odds_away", "0.0")),
             "PROXY_URL": proxy_url,
             "KAFKA_BROKER": "kafka:29092"
         }
