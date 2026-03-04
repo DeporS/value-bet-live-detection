@@ -28,4 +28,6 @@ data/training_set/*
 !data/training_set/.gitkeep
 logs/*
 !logs/.gitkeep
-test_data/*
+ML/test_data/*
+!ML/test_data/.gitkeep
+ML/test_output.txt
