@@ -7,6 +7,21 @@ from confluent_kafka import Consumer
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AlertService")
 
+def send_alert(webhook_url: str, message_content: str) -> None:
+    try:
+        response = requests.post(
+            webhook_url, 
+            json={"content": message_content}, 
+            timeout=3.0
+        )
+        if response.status_code == 204:
+            logger.info("Alert sent successfully.")
+        else:
+            logger.warning(f"Failed to send alert. Status code: {response.status_code}, Response: {response.text}")
+    except requests.RequestException as e:
+        logger.error(f"Error sending alert: {e}")
+
+
 def main() -> None:
     webhook_url = os.getenv("DISCORD_GOAL_ALERT_WEBHOOK_URL")
     kafka_broker = os.getenv("KAFKA_BROKER", "localhost:9092")
@@ -62,18 +77,19 @@ def main() -> None:
                 last_away = last_state["away"]
                 last_status = last_state["status"]
 
+                # --- Match started ---
+                if current_status == 12 and last_status != 12:
+                    msg_content = f"🚀 **MECZ ROZPOCZĘTY!** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
+                    # dispatch alert to Discord
+                    send_alert(webhook_url, msg_content)
+                    logger.info(f"Send alert for started match: {current_home} - {current_away}")
+
                 # --- Match finished ---
-                if current_status == 3 and last_status != 3:
+                elif current_status == 3 and last_status != 3:
                     msg_content = f"🏁 **KONIEC MECZU** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
-                    
-                    match_states[match_id]["status"] = 3 # Spam prevention flag
-                    requests.post(
-                        webhook_url, 
-                        json={"content": msg_content}, 
-                        timeout=3.0
-                    )
-                    logger.info(f"Wysłano powiadomienie o końcu meczu: {current_home} - {current_away}")
-                    continue # Skip goal alert logic for finished matches
+                    # dispatch alert to Discord
+                    send_alert(webhook_url, msg_content)
+                    logger.info(f"Send alert for finished match: {current_home} - {current_away}")
 
                 # --- Main logic ---
                 if current_home != last_home or current_away != last_away:
@@ -82,21 +98,18 @@ def main() -> None:
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ **GOL!**"
                     else:
-                        title = "🚨 **VAR / KOREKTA WYNIKU!**"
+                        title = "🚨 **KOREKTA!**"
 
                     msg_content = f"{title} | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
-                    
-                    # Update goals local state
-                    match_states[match_id]["home"] = current_home
-                    match_states[match_id]["away"] = current_away
-
                     # dispatch alert to Discord
-                    requests.post(
-                        webhook_url, 
-                        json={"content": msg_content}, 
-                        timeout=3.0 
-                    )
+                    send_alert(webhook_url, msg_content)
                     logger.info(f"Sent alert to discord: {current_home} - {current_away}")
+
+                match_states[match_id] = {
+                    "home": current_home, 
+                    "away": current_away, 
+                    "status": current_status
+                }
 
             except json.JSONDecodeError:
                 logger.warning("Got invalid JSON.")
