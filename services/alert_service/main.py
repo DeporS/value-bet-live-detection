@@ -86,6 +86,7 @@ def main() -> None:
                 if current_status == 12 and match_states[match_id]["already_started"] == False: # Status 12 indicates match has started
                     title = "🚀 - **MECZ ROZPOCZĘTY!**"
                     msg_content = (
+                        f"----------------------------------\n"
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
@@ -100,6 +101,7 @@ def main() -> None:
                 elif current_status == 3 and last_status != 3:
                     title = "🏁 - **KONIEC MECZU**"
                     msg_content = (
+                        f"----------------------------------\n"
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"**{current_home} - {current_away}**\n"
@@ -128,6 +130,7 @@ def main() -> None:
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ - **GOL!**"
                         msg_content = (
+                            f"----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
@@ -136,6 +139,7 @@ def main() -> None:
                     else:
                         title = "🚨 - **KOREKTA!**"
                         msg_content = (
+                            f"----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'\n"
