@@ -27,7 +27,17 @@ def fetch_daily_matches(**kwargs) -> list:
             try:
                 # Wait up to 15 seconds for the match elements to appear in the DOM
                 page.wait_for_selector('.event__match', timeout=15000)
-                logger.info("Successfully waited for match elements to appear.")
+                logger.info("First matches appeared. Allowing SPA to fully render...")
+
+                # Wait an additional 5 seconds to ensure all JavaScript-rendered content is loaded
+                page.wait_for_timeout(5000)
+
+                # Scroll down
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+                page.wait_for_timeout(1000) # Wait for any additional content to load after scrolling
+                logger.info("Successfully waited for all match elements to populate.")
+                
             except Exception as e:
                 logger.error("Timeout: Match elements did not appear within 15 seconds.")
                 browser.close()
