@@ -84,7 +84,12 @@ def main() -> None:
 
                 # --- Match started ---
                 if current_status == 12 and match_states[match_id]["already_started"] == False: # Status 12 indicates match has started
-                    msg_content = f"🚀 **MECZ ROZPOCZĘTY!** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
+                    title = "🚀 - **MECZ ROZPOCZĘTY!**"
+                    msg_content = (
+                        f"{title}\n"
+                        f"{home_team} vs {away_team}\n"
+                        f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**"
+                    )
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
                     logger.info(f"Send alert for started match: {current_home} - {current_away}")
@@ -92,7 +97,12 @@ def main() -> None:
 
                 # --- Match finished ---
                 elif current_status == 3 and last_status != 3:
-                    msg_content = f"🏁 **KONIEC MECZU** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
+                    title = "🏁 - **KONIEC MECZU**"
+                    msg_content = (
+                        f"{title}\n"
+                        f"{home_team} vs {away_team}\n"
+                        f"**{current_home} - {current_away}**"
+                    )
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
                     logger.info(f"Send alert for finished match: {current_home} - {current_away}")
@@ -102,14 +112,14 @@ def main() -> None:
                     
                     # Check if its a new goal or a correction (VAR)
                     if current_home > last_home or current_away > last_away:
-                        title = "⚽ **GOL!**"
+                        title = "⚽ - **GOL!**"
                         msg_content = (
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**"
                         )
                     else:
-                        title = "🚨 **KOREKTA!**"
+                        title = "🚨 - **KOREKTA!**"
                         msg_content = (
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
