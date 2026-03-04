@@ -71,7 +71,7 @@ def main() -> None:
 
                 # Initialize state for new matches
                 if match_id not in match_states:
-                    match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status, "already_started": False}
+                    match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status, "already_started": False, "zero_strikes": 0}
                     continue
 
                 if current_second > 3:
@@ -110,6 +110,18 @@ def main() -> None:
                 # --- Main logic ---
                 if current_home != last_home or current_away != last_away:
                     
+                    # Jitter check
+                    if current_home == 0 and current_away == 0 and (last_home > 0 or last_away > 0) and current_minute > 1:
+                        # Suspicious zeros
+                        match_states[match_id]["zero_strikes"] = match_states[match_id].get("zero_strikes", 0) + 1
+                        
+                        if match_states[match_id]["zero_strikes"] < 3: 
+                            logger.warning(f"Suspicious zero update for match {match_id}.")
+                            continue
+                        else:
+                            logger.warning(f"Multiple zero updates for match {match_id}. Accepting update.")
+
+                    
                     # Check if its a new goal or a correction (VAR)
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ - **GOL!**"
@@ -135,7 +147,8 @@ def main() -> None:
                     "home": current_home, 
                     "away": current_away, 
                     "status": current_status,
-                    "already_started": match_states[match_id].get("already_started", False)
+                    "already_started": match_states[match_id].get("already_started", False),
+                    "zero_strikes": 0 # reset zero strikes on any valid update
                 }
 
             except json.JSONDecodeError:
