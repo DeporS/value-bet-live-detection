@@ -109,7 +109,8 @@ def main() -> None:
                 match_states[match_id] = {
                     "home": current_home, 
                     "away": current_away, 
-                    "status": current_status
+                    "status": current_status,
+                    "already_started": match_states[match_id].get("already_started", False)
                 }
 
             except json.JSONDecodeError:
