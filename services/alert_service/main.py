@@ -89,6 +89,7 @@ def main() -> None:
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
+                        f"----------------------------------\n"
                     )
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
@@ -102,6 +103,7 @@ def main() -> None:
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"**{current_home} - {current_away}**\n"
+                        f"----------------------------------\n"
                     )
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
@@ -129,6 +131,7 @@ def main() -> None:
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
+                            f"----------------------------------\n"
                         )
                     else:
                         title = "🚨 - **KOREKTA!**"
@@ -136,7 +139,8 @@ def main() -> None:
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {current_minute}'\n"
-                            f"**{last_home} - {last_away}** → **{current_home} - {current_away}\n**"
+                            f"**{last_home} - {last_away}** → **{current_home} - {current_away}**\n"
+                            f"----------------------------------\n"
                         )
                     
                     # dispatch alert to Discord
