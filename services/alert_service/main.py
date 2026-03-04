@@ -69,7 +69,7 @@ def main() -> None:
 
                 # Initialize state for new matches
                 if match_id not in match_states:
-                    match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status}
+                    match_states[match_id] = {"home": current_home, "away": current_away, "status": current_status, "already_started": False}
                     continue
 
                 last_state = match_states[match_id]
@@ -78,11 +78,12 @@ def main() -> None:
                 last_status = last_state["status"]
 
                 # --- Match started ---
-                if current_status == 12 and last_status != 12:
+                if current_status == 12 and match_states[match_id]["already_started"] == False: # Status 12 indicates match has started
                     msg_content = f"🚀 **MECZ ROZPOCZĘTY!** | {home_team} vs {away_team} | Wynik: **{current_home} - {current_away}**"
                     # dispatch alert to Discord
                     send_alert(webhook_url, msg_content)
                     logger.info(f"Send alert for started match: {current_home} - {current_away}")
+                    match_states[match_id]["already_started"] = True
 
                 # --- Match finished ---
                 elif current_status == 3 and last_status != 3:
