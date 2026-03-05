@@ -21,7 +21,7 @@ async def get_db_pool():
 
 async def init_db(pool):
     """Initialize the database by creating necessary tables."""
-    async with pool.ascquire() as conn:
+    async with pool.acquire() as conn:
         # User & points table
         await conn.execute(
             '''
@@ -46,7 +46,7 @@ async def init_db(pool):
                 away_odds NUMERIC(5, 2) NOT NULL,
                 start_time TIMESTAMP,
                 status VARCHAR(20) DEFAULT 'PRE_MATCH', -- PRE_MATCH, IN_PLAY, FINISHED
-                final_result INT, -- 1, 0, 2 (wypełniane po zakończeniu)
+                final_result INT, -- 1, 0, 2 Filled when status is FINISHED
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             '''
