@@ -35,7 +35,7 @@ PYTHONPATH="$(pwd):$(pwd)/services/ingestion_service/src" poetry run python expe
 To inspect the generated Parquet files, activate the virtual environment created from requirements.txt (it contains the dependencies required for reading Parquet files, e.g. pyarrow).
 
 ```bash
-python experiments/view_parquet.py
+python ML/analyze.py
 ```
 
 ## Run just the airflow containers
