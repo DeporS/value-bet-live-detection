@@ -31,3 +31,5 @@ logs/*
 ML/test_data/*
 !ML/test_data/.gitkeep
 ML/test_output.txt
+ML/waiting_room/*
+!ML/waiting_room/.gitkeep
