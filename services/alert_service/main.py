@@ -68,6 +68,7 @@ def main() -> None:
                 current_status = event.get("match_status", 0)
                 current_minute = event.get("minute", 0)
                 current_second = event.get("second", 0)
+                half = 1 if event.get("granular_status", 0) == 12 else 2 if event.get("granular_status", 0) == 13 else 0
 
                 # Initialize state for new matches
                 if match_id not in match_states:
@@ -76,6 +77,13 @@ def main() -> None:
 
                 if current_second > 3:
                     current_minute += 1
+                
+                # Handle minute display for alerts, especially around halftime and fulltime
+                minute_info = str(current_minute)
+                if half == 1 and current_minute >= 45:
+                    minute_info = "45+" + str(current_minute - 45)
+                elif half == 2 and current_minute >= 90:
+                    minute_info = "90+" + str(current_minute - 90)
 
                 last_state = match_states[match_id]
                 last_home = last_state["home"]
@@ -89,7 +97,7 @@ def main() -> None:
                         f"----------------------------------\n"
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
-                        f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
+                        f"⏱️ {minute_info}'  |  **{current_home} - {current_away}**\n"
                         f"----------------------------------\n"
                     )
                     # dispatch alert to Discord
@@ -133,7 +141,7 @@ def main() -> None:
                             f"----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
-                            f"⏱️ {current_minute}'  |  **{current_home} - {current_away}**\n"
+                            f"⏱️ {minute_info}'  |  **{current_home} - {current_away}**\n"
                             f"----------------------------------\n"
                         )
                     else:
@@ -142,7 +150,7 @@ def main() -> None:
                             f"----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
-                            f"⏱️ {current_minute}'\n"
+                            f"⏱️ {minute_info}'\n"
                             f"**{last_home} - {last_away}** → **{current_home} - {current_away}**\n"
                             f"----------------------------------\n"
                         )
