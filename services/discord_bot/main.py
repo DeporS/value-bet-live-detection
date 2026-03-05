@@ -3,6 +3,8 @@ import discord
 from discord.ext import commands
 import logging
 from database import get_db_pool, init_db
+import uuid
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('discord_bot.main')
@@ -69,7 +71,44 @@ async def profil(interaction: discord.Interaction):
     embed.add_field(name="Gracz", value=username, inline=True)
     embed.add_field(name="Stan konta", value=f"🪙 **{points}** pkt", inline=True)
 
-    await interaction.response.send_message(content=msg, embed=embed)
+    await interaction.response.send_message(content=msg, embed=embed, ephemeral=True)
+
+@bot.tree.command(name="dev_mecz", description="[DEV] Generuje testowy mecz w bazie")
+async def dev_mecz(interaction: discord.Interaction):
+    """Hidden command for developers to create a test match in the database"""
+    
+    if not interaction.user.guild_permissions.administrator:
+        return await interaction.response.send_message("Brak uprawnień!", ephemeral=True)
+
+    match_id = str(uuid.uuid4())[:8] # short id
+    home_team = "Real Madryt"
+    away_team = "FC Barcelona"
+    home_odds = 2.80
+    draw_odds = 3.40
+    away_odds = 2.50
+    
+    # Symulate match starting in 2 hours
+    start_time = datetime.now() + timedelta(hours=2)
+
+    async with bot.db_pool.acquire() as conn:
+        await conn.execute(
+            '''
+            INSERT INTO matches 
+            (match_id, home_team, away_team, home_odds, draw_odds, away_odds, start_time) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ''',
+            match_id, home_team, away_team, home_odds, draw_odds, away_odds, start_time
+        )
+
+    embed = discord.Embed(title="🛠️ [DEV] Utworzono mecz testowy", color=discord.Color.green())
+    embed.add_field(name="ID Meczu", value=f"`{match_id}`", inline=False)
+    embed.add_field(name="Spotkanie", value=f"{home_team} vs {away_team}", inline=False)
+    embed.add_field(name="Kursy", value=f"1: **{home_odds}** | X: **{draw_odds}** | 2: **{away_odds}**", inline=False)
+    
+    # ephemeral=True - only the user who invoked the command can see this message
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 
 if __name__ == '__main__':
     token = os.getenv('DISCORD_TOKEN')
