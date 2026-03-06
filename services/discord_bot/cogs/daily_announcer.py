@@ -11,7 +11,12 @@ class DailyAnnouncerCog(commands.Cog):
         self.bot = bot
     
     @app_commands.command(name="opublikuj_mecze", description="[ADMIN] Publikuje dzisiejsze mecze z bazy na obecnym kanale")
-    async def opublikuj_mecze(self, interaction: discord.Interaction):
+    @app_commands.describe(mode="dev - dla testów, normal - prawdziwe mecze")
+    @app_commands.choices(mode=[
+        app_commands.Choice(name="dev", value="dev"),
+        app_commands.Choice(name="normal", value="normal")
+    ])
+    async def opublikuj_mecze(self, interaction: discord.Interaction, mode: app_commands.Choice[str]):
         if not interaction.user.guild_permissions.administrator:
             return await interaction.response.send_message("❌ Brak uprawnień!", ephemeral=True)
 
@@ -45,7 +50,8 @@ class DailyAnnouncerCog(commands.Cog):
             embed = discord.Embed(title=f"⚽ {match['home_team']} vs {match['away_team']}", color=discord.Color.blue())
             
             # <t:time:f> for readable date and <t:time:R> (fe. "za 2 godziny")
-            embed.add_field(name="ID Meczu", value=f"`{match['match_id']}`", inline=False)
+            if mode.value == "dev":
+                embed.add_field(name="ID Meczu", value=f"`{match['match_id']}`", inline=False)
             embed.add_field(name="Rozpoczęcie", value=f"<t:{unix_time}:f> (<t:{unix_time}:R>)", inline=False)
             embed.add_field(name="Kursy", value=f"1: **{match['home_odds']}** | X: **{match['draw_odds']}** | 2: **{match['away_odds']}**", inline=False)
             
@@ -60,7 +66,10 @@ class DailyAnnouncerCog(commands.Cog):
                 match['away_team']
             )
             
-            await channel.send(embed=embed, view=view)
+            if mode.value == "dev":
+                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            else:
+                await interaction.channel.send(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(DailyAnnouncerCog(bot))
