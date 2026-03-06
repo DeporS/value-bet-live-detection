@@ -1,27 +1,39 @@
 import discord
 from discord import ui
 
-class BetModal(ui.Modal, title='Postaw Zakład'):
-    bet = ui.TextInput(
-        label='Ile punktów stawiasz?',
-        placeholder='np. 100',
-        min_length=1,
-        max_length=7
-    )
-
+class BetModal(ui.Modal):
     def __init__(self, match_id, team, prediction, odds, bot_pool):
-        super().__init__()
+        modal_title = f"Zakład: {team}"
+        # Truncate title if it's too long for Discord's modal limit
+        if len(modal_title) > 45:
+            modal_title = modal_title[:42] + "..."
+
+        super().__init__(title=modal_title)
+
         self.match_id = match_id
         self.team = team
         self.prediction = prediction
         self.odds = odds
         self.pool = bot_pool
 
+        self.bet = ui.TextInput(
+            label=f'Stawka (Kurs: {self.odds})',
+            placeholder=f'Wygrana to: stawka x {self.odds}',
+            min_length=1,
+            max_length=7,
+        )
+
+        self.add_item(self.bet)
+
     async def on_submit(self, interaction: discord.Interaction):
         if not self.bet.value.isdigit():
             return await interaction.response.send_message("❌ Wpisz liczbę!", ephemeral=True)
         
         val = int(self.bet.value)
+
+        if val <= 0:
+            return await interaction.response.send_message("❌ Stawka musi być większa niż 0!", ephemeral=True)
+
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 match = await conn.fetchrow('SELECT home_team, away_team, status, start_time FROM matches WHERE match_id = $1 FOR UPDATE', self.match_id)
