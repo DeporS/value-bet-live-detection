@@ -27,6 +27,7 @@ class DailyAnnouncerCog(commands.Cog):
                 AND DATE(start_time) = CURRENT_DATE
                 AND start_time > NOW()
                 ORDER BY start_time ASC
+                LIMIT 25
             ''')
 
         if not matches:
