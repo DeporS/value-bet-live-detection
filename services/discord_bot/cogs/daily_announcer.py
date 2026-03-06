@@ -45,6 +45,7 @@ class DailyAnnouncerCog(commands.Cog):
             embed = discord.Embed(title=f"⚽ {match['home_team']} vs {match['away_team']}", color=discord.Color.blue())
             
             # <t:time:f> for readable date and <t:time:R> (fe. "za 2 godziny")
+            embed.add_field(name="ID Meczu", value=f"`{match['match_id']}`", inline=False)
             embed.add_field(name="Rozpoczęcie", value=f"<t:{unix_time}:f> (<t:{unix_time}:R>)", inline=False)
             embed.add_field(name="Kursy", value=f"1: **{match['home_odds']}** | X: **{match['draw_odds']}** | 2: **{match['away_odds']}**", inline=False)
             
