@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import uuid
 from datetime import datetime, timedelta
+from ui_components import MatchView
 
 class BettingCog(commands.Cog):
     def __init__(self, bot):
@@ -36,12 +37,12 @@ class BettingCog(commands.Cog):
             )
 
         embed = discord.Embed(title="🛠️ [DEV] Utworzono mecz testowy", color=discord.Color.green())
-        embed.add_field(name="ID Meczu", value=f"`{match_id}`", inline=False)
-        embed.add_field(name="Spotkanie", value=f"{home_team} vs {away_team}", inline=False)
         embed.add_field(name="Kursy", value=f"1: **{home_odds}** | X: **{draw_odds}** | 2: **{away_odds}**", inline=False)
-        
+
+        view = MatchView(match_id, self.bot.db_pool, home_odds, draw_odds, away_odds)
+
         # ephemeral=True - only the user who invoked the command can see this message
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(BettingCog(bot))
