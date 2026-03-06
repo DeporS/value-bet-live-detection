@@ -2,14 +2,19 @@ from typing import List, Dict
 from datetime import datetime, timedelta
 import os
 import requests
+import logging
 
 from airflow import DAG
 from airflow.decorators import task, task_group
 from airflow.sensors.date_time import DateTimeSensor
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.models import Variable
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 from scripts.flashscore_scraper import fetch_daily_matches
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 @task
 def send_discord_alert(match_data: Dict, status: str) -> None:
@@ -19,7 +24,7 @@ def send_discord_alert(match_data: Dict, status: str) -> None:
     """
     WEBHOOK_URL = os.getenv("DISCORD_AIRFLOW_ALERT_URL")
     if not WEBHOOK_URL:
-        print("DISCORD_AIRFLOW_ALERT_URL not set in environment variables!")
+        logger.error("DISCORD_AIRFLOW_ALERT_URL not set in environment variables!")
         return  # Do not proceed if webhook URL is not set
 
     match_id = match_data.get("match_id", "Nieznany ID")
@@ -31,12 +36,12 @@ def send_discord_alert(match_data: Dict, status: str) -> None:
     elif status == "END":
         message = f"**Zakończono pobieranie meczu!** ID: `{match_id}` - {home_team} vs {away_team}. Kontener usunięty."
     else:
-        message = f"ℹ**Status meczu `{match_id}` - {home_team} vs {away_team}: {status}**"
+        message = f"**Status meczu `{match_id}` - {home_team} vs {away_team}: {status}**"
         
     try:
         requests.post(WEBHOOK_URL, json={"content": message}, timeout=5)
     except Exception as e:
-        print(f"Błąd sieci podczas wysyłania alertu: {e}")
+        logger.error(f"Network error: {e}")
 
 default_args = {
     'owner': 'DeporS',
@@ -56,6 +61,44 @@ with DAG(
     catchup=False,
     tags=['live_betting', 'ingestion', 'docker'],
 ) as dag:
+    
+    @task
+    def insert_matches_to_db(matches: List[Dict]):
+        """
+        Saves scraped matches to database (table 'matches').
+        """
+        if not matches:
+            logger.warning("No matches to insert.")
+            return
+
+        hook = PostgresHook(postgres_conn_id='postgres_bot_db')
+        
+        records = []
+        for match in matches:
+            # Fix start_time format if needed (replace 'T' with space)
+            start_time = match['scheduled_time'].replace('T', ' ')
+            records.append((
+                match['match_id'],
+                match['home_team'],
+                match['away_team'],
+                start_time,
+                float(match.get('odds_home', 0)),
+                float(match.get('odds_draw', 0)),
+                float(match.get('odds_away', 0))
+            ))
+
+        # insert_rows - efficient bulk insert. replace=False ensures we skip duplicates based on match_id.
+        try:
+            hook.insert_rows(
+                table='matches', 
+                rows=records, 
+                target_fields=['match_id', 'home_team', 'away_team', 'start_time', 'home_odds', 'draw_odds', 'away_odds'],
+                replace=False,
+                replace_index='match_id' 
+            )
+            logger.info(f"Successfully inserted {len(records)} matches into the bot database.")
+        except Exception as e:
+            logger.error(f"Error inserting matches into database: {e}")
 
     @task
     def discover_matches() -> List[Dict]:
@@ -131,6 +174,9 @@ with DAG(
     
     # Fetch the list of matches
     matches_list = discover_matches()
+
+    # Insert matches into the database (skipping duplicates)
+    save_to_db = insert_matches_to_db(matches_list)
 
     # Expand the ENTIRE TaskGroup over the list of matches
     process_live_match.expand(match_data=matches_list)
