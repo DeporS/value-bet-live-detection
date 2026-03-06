@@ -117,6 +117,8 @@ services:
   postgres-airflow:
     image: postgres:13
     restart: always
+    networks:
+      - value_engine_net
     environment:
       - POSTGRES_USER=airflow
       - POSTGRES_PASSWORD=${AIRFLOW_DB_PASSWORD}
@@ -128,6 +130,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.airflow
+    networks:
+      - value_engine_net
     depends_on:
       - postgres-airflow
     environment:
@@ -149,6 +153,8 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     restart: always
+    networks:
+      - value_engine_net
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres-airflow/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
@@ -184,6 +190,8 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     restart: always
+    networks:
+      - value_engine_net
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres-airflow/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
