@@ -4,8 +4,6 @@ from discord.ext import commands
 import logging
 import asyncio
 from database import get_db_pool, init_db
-import uuid
-from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('discord_bot.main')
