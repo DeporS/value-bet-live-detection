@@ -35,12 +35,19 @@ class DailyAnnouncerCog(commands.Cog):
                 LIMIT 25
             ''')
 
-        if not matches:
+        if not matches and (mode.value == "dev"):
             return await interaction.followup.send("📭 Nie ma dzisiaj w bazie żadnych nierozpoczętych meczów.")
 
-        await interaction.followup.send(f"✅ Znaleziono {len(matches)} meczów. Rozpoczynam publikację...")
-        
-        channel = interaction.channel
+        if mode.value == "dev":
+            await interaction.followup.send(f"✅ Znaleziono {len(matches)} meczów. Rozpoczynam publikację...")
+        else:
+            intro_embed = discord.Embed(
+                title="📅 Dzisiejsze Spotkania",
+                description=f"Wybierz które chcesz śledzić, oraz swoje typy poniżej.",
+                color=discord.Color.blue()
+            )
+            await interaction.followup.send(embed=intro_embed)
+
 
         # Print each match with formatted time and odds
         for match in matches:

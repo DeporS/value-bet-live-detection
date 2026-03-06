@@ -63,3 +63,22 @@ class MatchView(ui.View):
     @ui.button(label="2", style=discord.ButtonStyle.red)
     async def btn_2(self, interaction: discord.Interaction, btn: ui.Button):
         await interaction.response.send_modal(BetModal(self.match_id, self.teams[2], 2, self.odds[2], self.pool))
+
+    @ui.button(label="Śledź", style=discord.ButtonStyle.secondary, emoji="🔔", row=1)
+    async def btn_track(self, interaction: discord.Interaction, button: ui.Button):
+        user_id = interaction.user.id
+        
+        async with self.pool.acquire() as conn:
+            # Check if user is registered in the system
+            user_exists = await conn.fetchrow('SELECT 1 FROM users WHERE discord_id = $1', user_id)
+            if not user_exists:
+                return await interaction.response.send_message("❌ Zanim zaczniesz śledzić mecze, załóż profil wpisując komendę `/profil`!", ephemeral=True)
+
+            existing = await conn.fetchrow('SELECT 1 FROM tracked_matches WHERE discord_id = $1 AND match_id = $2', user_id, self.match_id)
+            
+            if existing:
+                await conn.execute('DELETE FROM tracked_matches WHERE discord_id = $1 AND match_id = $2', user_id, self.match_id)
+                await interaction.response.send_message("🔕 Wyłączono powiadomienia dla tego meczu.", ephemeral=True)
+            else:
+                await conn.execute('INSERT INTO tracked_matches (discord_id, match_id) VALUES ($1, $2)', user_id, self.match_id)
+                await interaction.response.send_message("🔔 Będziesz otrzymywać powiadomienia o tym meczu!", ephemeral=True)
