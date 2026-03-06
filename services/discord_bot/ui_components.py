@@ -24,10 +24,20 @@ class BetModal(ui.Modal, title='Postaw Zakład'):
         val = int(self.bet.value)
         async with self.pool.acquire() as conn:
             async with conn.transaction():
+                match = await conn.fetchrow('SELECT home_team, away_team, status, start_time FROM matches WHERE match_id = $1 FOR UPDATE', self.match_id)
+                
+                # Match existence and status checks
+                if not match:
+                    return await interaction.response.send_message("❌ Ten mecz już nie istnieje w bazie.", ephemeral=True)
+                if match['status'] != 'PRE_MATCH':
+                    return await interaction.response.send_message("❌ Zakłady na ten mecz są już zamknięte (Mecz trwa lub się zakończył).", ephemeral=True)
+
+                # Check if user has enough points
                 user = await conn.fetchrow('SELECT points FROM users WHERE discord_id = $1 FOR UPDATE', interaction.user.id)
                 if not user or user['points'] < val:
                     return await interaction.response.send_message(f"❌ Brak środków! Posiadasz {user['points']} pkt.", ephemeral=True)
 
+                # Deduct points and record the bet
                 await conn.execute('UPDATE users SET points = points - $1 WHERE discord_id = $2', val, interaction.user.id)
                 await conn.execute('INSERT INTO bets (discord_id, match_id, prediction, stake, odds) VALUES ($1, $2, $3, $4, $5)',
                                    interaction.user.id, self.match_id, self.prediction, val, self.odds)
