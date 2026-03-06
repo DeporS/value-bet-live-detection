@@ -12,20 +12,20 @@ class DailyAnnouncerCog(commands.Cog):
     
     @app_commands.command(name="opublikuj_mecze", description="[ADMIN] Publikuje dzisiejsze mecze z bazy na obecnym kanale")
     async def opublikuj_mecze(self, interaction: discord.Interaction):
-        # Weryfikacja uprawnień
         if not interaction.user.guild_permissions.administrator:
             return await interaction.response.send_message("❌ Brak uprawnień!", ephemeral=True)
 
-        # Mówimy Discordowi: "Daj mi chwilę, muszę pomyśleć", żeby zapobiec błędowi przekroczenia czasu (3 sekundy)
+        # Defer response to give bot more time to process (especially if there are many matches)
         await interaction.response.defer(ephemeral=True)
 
         async with self.bot.db_pool.acquire() as conn:
-            # Pobieramy mecze, które są na dzisiaj i jeszcze się nie rozpoczęły
+            # Get today's matches that haven't started yet (status = 'PRE_MATCH')
             matches = await conn.fetch('''
                 SELECT match_id, home_team, away_team, home_odds, draw_odds, away_odds, start_time 
                 FROM matches 
                 WHERE status = 'PRE_MATCH' 
                 AND DATE(start_time) = CURRENT_DATE
+                AND start_time > NOW()
                 ORDER BY start_time ASC
             ''')
 
@@ -36,18 +36,18 @@ class DailyAnnouncerCog(commands.Cog):
         
         channel = interaction.channel
 
-        # Publikujemy każdy mecz jako osobną wiadomość z przyciskami
+        # Print each match with formatted time and odds
         for match in matches:
-            # Zamiana czasu z bazy na format czytelny dla Discorda
+            # Change time format to readable
             unix_time = int(match['start_time'].timestamp())
             
             embed = discord.Embed(title=f"⚽ {match['home_team']} vs {match['away_team']}", color=discord.Color.blue())
             
-            # Używamy <t:czas:f> dla dokładnej daty i <t:czas:R> dla odliczania (np. "za 2 godziny")
+            # <t:time:f> for readable date and <t:time:R> (fe. "za 2 godziny")
             embed.add_field(name="Rozpoczęcie", value=f"<t:{unix_time}:f> (<t:{unix_time}:R>)", inline=False)
             embed.add_field(name="Kursy", value=f"1: **{match['home_odds']}** | X: **{match['draw_odds']}** | 2: **{match['away_odds']}**", inline=False)
             
-            # Podpinamy interfejs z przyciskami (MatchView z ui_components.py)
+            # MatchView with buttons
             view = MatchView(
                 match['match_id'], 
                 self.bot.db_pool, 

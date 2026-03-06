@@ -42,7 +42,7 @@ class BetModal(ui.Modal, title='Postaw Zakład'):
                 await conn.execute('INSERT INTO bets (discord_id, match_id, prediction, stake, odds) VALUES ($1, $2, $3, $4, $5)',
                                    interaction.user.id, self.match_id, self.prediction, val, self.odds)
 
-        await interaction.response.send_message(f"✅ Postawiono {val} pkt na {self.team} (Kurs: {self.odds}) - do wygrania {val * self.odds}", ephemeral=True)
+        await interaction.response.send_message(f"✅ Postawiono {val} pkt na {self.team} (Kurs: {self.odds}) - do wygrania {round(val * self.odds)}", ephemeral=True)
 
 class MatchView(ui.View):
     def __init__(self, match_id, bot_pool, h_odds, d_odds, a_odds, h_team, a_team):

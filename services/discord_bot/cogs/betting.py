@@ -55,7 +55,7 @@ class BettingCog(commands.Cog):
     ])
     async def dev_wynik(self, interaction: discord.Interaction, match_id: str, outcome: app_commands.Choice[int]):
         if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("Brak uprawnień!", ephemeral=True)
+            return await interaction.response.send_message("❌ Brak uprawnień!", ephemeral=True)
 
         winning_prediction = outcome.value
         winning_team = match['home_team'] if winning_prediction == 1 else (match['away_team'] if winning_prediction == 2 else "Remis")
@@ -91,7 +91,7 @@ class BettingCog(commands.Cog):
 
                     if bet['prediction'] == winning_prediction:
                         # Player won
-                        points_won = int(stake * odds)
+                        points_won = round(stake * odds)
 
                         # Update user's points balance
                         await conn.execute('UPDATE users SET points = points + $1 WHERE discord_id = $2', points_won, bet['discord_id'])
