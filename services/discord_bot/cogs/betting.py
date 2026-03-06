@@ -86,6 +86,9 @@ class BettingCog(commands.Cog):
                     odds = float(bet['odds']) 
                     stake = int(bet['stake'])
 
+                    if bet['status'] != 'PENDING':
+                        continue # Skip already processed bets (shouldn't happen in this flow, but just in case)
+
                     if bet['prediction'] == winning_prediction:
                         # Player won
                         points_won = int(stake * odds)
@@ -108,6 +111,29 @@ class BettingCog(commands.Cog):
         embed.add_field(name="Spotkanie", value=f"{match['home_team']} vs {match['away_team']}", inline=False)
         embed.add_field(name="Wygrywający typ", value=winning_team, inline=False)
         embed.add_field(name="Statystyki", value=f"Wygrane kupony: **{bets_won}**\nRozdane punkty: 🪙 **{withdrawn_points}**", inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="moje_kupony", description="Wyświetla historię Twoich zakładów")
+    async def moje_kupony(self, interaction: discord.Interaction):
+        user_id = interaction.user.id
+
+        async with self.bot.db_pool.acquire() as conn:
+            bets = await conn.fetch('''
+                SELECT b.*, m.home_team, m.away_team, m.start_time 
+                FROM bets b 
+                JOIN matches m ON b.match_id = m.match_id 
+                WHERE b.discord_id = $1
+                ORDER BY b.created_at DESC
+                ''', user_id)
+            
+        if not bets:
+            return await interaction.response.send_message("Nie masz jeszcze żadnych kuponów. Zacznij obstawiać!", ephemeral=True)
+        
+        embed = discord.Embed(title="🎟️ Twoje kupony", color=discord.Color.purple())
+
+        for bet in bets:
+            embed.add_field(name=f"{bet['home_team']} vs {bet['away_team']}", value=f"Typ: {bet['prediction']}\nStawka: {bet['stake']}\nKurs: {bet['odds']}\nStatus: {bet['status']}", inline=False)
 
         await interaction.response.send_message(embed=embed)
 
