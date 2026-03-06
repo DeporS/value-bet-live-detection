@@ -17,8 +17,8 @@ class BetModal(ui.Modal):
         self.pool = bot_pool
 
         self.bet = ui.TextInput(
-            label=f'Kurs: {self.odds}\nStawka: ',
-            placeholder=f'Wygrana to: stawka x {self.odds}',
+            label=f'Kurs: {self.odds}',
+            placeholder='Stawka',
             min_length=1,
             max_length=7,
         )
