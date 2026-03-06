@@ -53,7 +53,9 @@ class DailyAnnouncerCog(commands.Cog):
                 self.bot.db_pool, 
                 float(match['home_odds']), 
                 float(match['draw_odds']), 
-                float(match['away_odds'])
+                float(match['away_odds']),
+                match['home_team'],
+                match['away_team']
             )
             
             await channel.send(embed=embed, view=view)
