@@ -153,9 +153,13 @@ class BettingCog(commands.Cog):
                 status_txt = "⏳ W toku"
                 profit_txt = f"Do wygrania: {int(bet['stake'] * bet['odds'])}"
 
+            # Format start time
+            start_time = bet['start_time']
+            unix_time = int(start_time.timestamp())
+
             embed.add_field(
                 name=f"{bet['home_team']} vs {bet['away_team']}", 
-                value=f"**Czas: {bet['start_time']}**\n**Typ:** {typ}\n**Stawka:** {bet['stake']}\n**Kurs:** {bet['odds']}\n**Status:** {status_txt}\n**Zysk:** {profit_txt}", 
+                value=f"<t:{unix_time}:f>\n**Typ:** {typ}\n**Stawka:** {bet['stake']}\n**Kurs:** {bet['odds']}\n**Status:** {status_txt}\n**Zysk:** {profit_txt}", 
                 inline=False
             )
 
