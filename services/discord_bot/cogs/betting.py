@@ -155,7 +155,7 @@ class BettingCog(commands.Cog):
 
             embed.add_field(
                 name=f"{bet['home_team']} vs {bet['away_team']}", 
-                value=f"**Typ:** {typ}\n**Stawka:** {bet['stake']}\n**Kurs:** {bet['odds']}\n**Status:** {status_txt}\n**Zysk:** {profit_txt}", 
+                value=f"**Czas: {bet['start_time']}**\n**Typ:** {typ}\n**Stawka:** {bet['stake']}\n**Kurs:** {bet['odds']}\n**Status:** {status_txt}\n**Zysk:** {profit_txt}", 
                 inline=False
             )
 
