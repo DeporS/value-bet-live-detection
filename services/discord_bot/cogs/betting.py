@@ -58,6 +58,7 @@ class BettingCog(commands.Cog):
             return await interaction.response.send_message("Brak uprawnień!", ephemeral=True)
 
         winning_prediction = outcome.value
+        winning_team = match['home_team'] if winning_prediction == 1 else (match['away_team'] if winning_prediction == 2 else "Remis")
 
         async with self.bot.db_pool.acquire() as conn:
             # Open transcation
@@ -105,7 +106,7 @@ class BettingCog(commands.Cog):
         # Summary embed
         embed = discord.Embed(title="🏁 Mecz zakończony i rozliczony!", color=discord.Color.gold())
         embed.add_field(name="Spotkanie", value=f"{match['home_team']} vs {match['away_team']}", inline=False)
-        embed.add_field(name="Wygrywający typ", value=outcome.name, inline=False)
+        embed.add_field(name="Wygrywający typ", value=winning_team, inline=False)
         embed.add_field(name="Statystyki", value=f"Wygrane kupony: **{bets_won}**\nRozdane punkty: 🪙 **{withdrawn_points}**", inline=False)
 
         await interaction.response.send_message(embed=embed)
