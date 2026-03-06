@@ -78,7 +78,7 @@ class MatchView(ui.View):
             
             if existing:
                 await conn.execute('DELETE FROM tracked_matches WHERE discord_id = $1 AND match_id = $2', user_id, self.match_id)
-                await interaction.response.send_message("🔕 Wyłączono powiadomienia dla tego meczu.", ephemeral=True)
+                await interaction.response.send_message(f"🔕 Wyłączono powiadomienia dla meczu {self.teams[1]} vs {self.teams[2]}.", ephemeral=True)
             else:
                 await conn.execute('INSERT INTO tracked_matches (discord_id, match_id) VALUES ($1, $2)', user_id, self.match_id)
-                await interaction.response.send_message("🔔 Będziesz otrzymywać powiadomienia o tym meczu!", ephemeral=True)
+                await interaction.response.send_message(f"🔔 Będziesz otrzymywać powiadomienia o meczu {self.teams[1]} vs {self.teams[2]}!", ephemeral=True)
