@@ -39,7 +39,7 @@ class BettingCog(commands.Cog):
         embed = discord.Embed(title="🛠️ [DEV] Utworzono mecz testowy", color=discord.Color.green())
         embed.add_field(name="Kursy", value=f"1: **{home_odds}** | X: **{draw_odds}** | 2: **{away_odds}**", inline=False)
 
-        view = MatchView(match_id, self.bot.db_pool, home_odds, draw_odds, away_odds)
+        view = MatchView(match_id, self.bot.db_pool, home_odds, draw_odds, away_odds, home_team, away_team)
 
         # ephemeral=True - only the user who invoked the command can see this message
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
