@@ -2,10 +2,41 @@ import os
 import json
 import logging
 import requests
+import psycopg2
 from confluent_kafka import Consumer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AlertService")
+
+def get_subscribers(match_id: str) -> str:
+    """
+    Gets the list of users tracking a given match from the database and returns a formatted string to ping them on Discord.
+    """
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "postgres"),
+            port=os.getenv("DB_PORT", "5432"),
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD")
+        )
+        cur = conn.cursor()
+        
+        # Safe parameterized query using (%s in psycopg2)
+        cur.execute("SELECT discord_id FROM tracked_matches WHERE match_id = %s", (match_id,))
+        rows = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+
+        if rows:
+            # Create string in this format: "<@12345> <@67890> "
+            return " ".join([f"<@{row[0]}>" for row in rows]) + "\n"
+        return ""
+        
+    except Exception as e:
+        logger.error(f"Database error while fetching subscribers: {e}")
+        return ""
 
 def send_alert(webhook_url: str, message_content: str) -> None:
     try:
@@ -93,8 +124,9 @@ def main() -> None:
                 # --- Match started ---
                 if current_status == 12 and match_states[match_id]["already_started"] == False: # Status 12 indicates match has started
                     title = "🚀 - **MECZ ROZPOCZĘTY!**"
+                    pings = get_subscribers(match_id)
                     msg_content = (
-                        f"----------------------------------\n"
+                        f"{pings}----------------------------------\n"
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"⏱️ {minute_info}'  |  **{current_home} - {current_away}**\n"
@@ -108,8 +140,9 @@ def main() -> None:
                 # --- Match finished ---
                 elif current_status == 3 and last_status != 3:
                     title = "🏁 - **KONIEC MECZU**"
+                    pings = get_subscribers(match_id)
                     msg_content = (
-                        f"----------------------------------\n"
+                        f"{pings}----------------------------------\n"
                         f"{title}\n"
                         f"{home_team} vs {away_team}\n"
                         f"**{current_home} - {current_away}**\n"
@@ -133,12 +166,13 @@ def main() -> None:
                         else:
                             logger.warning(f"Multiple zero updates for match {match_id}. Accepting update.")
 
+                    pings = get_subscribers(match_id)
                     
                     # Check if its a new goal or a correction (VAR)
                     if current_home > last_home or current_away > last_away:
                         title = "⚽ - **GOL!**"
                         msg_content = (
-                            f"----------------------------------\n"
+                            f"{pings}----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {minute_info}'  |  **{current_home} - {current_away}**\n"
@@ -147,7 +181,7 @@ def main() -> None:
                     else:
                         title = "🚨 - **KOREKTA!**"
                         msg_content = (
-                            f"----------------------------------\n"
+                            f"{pings}----------------------------------\n"
                             f"{title}\n"
                             f"{home_team} vs {away_team}\n"
                             f"⏱️ {minute_info}'\n"

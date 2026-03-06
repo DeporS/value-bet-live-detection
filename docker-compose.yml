@@ -224,6 +224,11 @@ services:
     environment:
       - KAFKA_BROKER=kafka:29092
       - DISCORD_GOAL_ALERT_WEBHOOK_URL=${DISCORD_GOAL_ALERT_WEBHOOK_URL}
+      - DB_HOST=${POSTGRES_HOST}
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
     depends_on:
       kafka-setup:
         condition: service_completed_successfully
