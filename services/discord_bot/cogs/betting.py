@@ -114,7 +114,7 @@ class BettingCog(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="moje_kupony", description="Wyświetla historię Twoich zakładów")
+    @app_commands.command(name="moje_kupony", description="Wyświetla historię Twoich 10 ostatnich zakładów")
     async def moje_kupony(self, interaction: discord.Interaction):
         user_id = interaction.user.id
 
@@ -125,6 +125,7 @@ class BettingCog(commands.Cog):
                 JOIN matches m ON b.match_id = m.match_id 
                 WHERE b.discord_id = $1
                 ORDER BY b.created_at DESC
+                LIMIT 10
                 ''', user_id)
             
         if not bets:
@@ -133,9 +134,32 @@ class BettingCog(commands.Cog):
         embed = discord.Embed(title="🎟️ Twoje kupony", color=discord.Color.purple())
 
         for bet in bets:
-            embed.add_field(name=f"{bet['home_team']} vs {bet['away_team']}", value=f"Typ: {bet['prediction']}\nStawka: {bet['stake']}\nKurs: {bet['odds']}\nStatus: {bet['status']}", inline=False)
+            # Determine the type of bet (home win, draw, away win)
+            if bet['prediction'] == 1:
+                typ = bet['home_team']
+            elif bet['prediction'] == 2:
+                typ = bet['away_team']
+            else:
+                typ = 'Remis'
+            
+            # Determine bet status and potential winnings
+            if bet['status'] == 'WON':
+                status_txt = "🟢 Wygrany"
+                profit_txt = f"+{int(bet['stake'] * bet['odds'])}"
+            elif bet['status'] == 'LOST':
+                status_txt = "🔴 Przegrany"
+                profit_txt = f"-{bet['stake']}"
+            else:
+                status_txt = "⏳ W toku"
+                profit_txt = f"Do wygrania: {int(bet['stake'] * bet['odds'])}"
 
-        await interaction.response.send_message(embed=embed)
+            embed.add_field(
+                name=f"{bet['home_team']} vs {bet['away_team']}", 
+                value=f"**Typ:** {typ}\n**Stawka:** {bet['stake']}\n**Kurs:** {bet['odds']}\n**Status:** {status_txt}\n**Zysk:** {profit_txt}", 
+                inline=False
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(BettingCog(bot))
